@@ -2,7 +2,7 @@
   "name": "expense-tracker",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://hemprakashpatidar.github.io/MyExpenses",
+  "homepage": "https://ver-px-fe.vercel.app",
   "type": "module",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
