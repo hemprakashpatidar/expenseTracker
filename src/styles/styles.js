@@ -73,7 +73,7 @@ export  const stylesComponents = (isMobile) => ({
       borderRadius: '10px',
       boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)',
       textAlign: 'center',
-      minWidth: isMobile ? '100%' : 'auto'
+      minWidth: 'auto'
     },
     categoryFilters: {
       padding: isMobile ? '1rem' : '1rem 2rem',
