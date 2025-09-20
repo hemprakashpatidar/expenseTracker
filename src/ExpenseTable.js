@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from './contexts/AuthContext.js';
 import Loader from './components/Loader.js';
+import AddTransaction from './components/AddTransaction.js';
 import { addAnimationStyles } from './utils/animations.js';
 import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
@@ -20,11 +21,19 @@ const ExpenseTable = () => {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
 
   // Add animations on component mount
   useEffect(() => {
     addAnimationStyles();
   }, []);
+
+  // Function to refresh data
+  const refreshData = () => {
+    // Trigger the useEffect to reload data
+    // setIsLoading(true);
+    // The useEffect will handle the actual data loading
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -36,6 +45,7 @@ const ExpenseTable = () => {
   }, []);
 
   useEffect(() => {
+    if (showAddTransaction) return
     setIsLoading(true); // Start loading
     //Todo add fucntion to fetch data from notion in separate file and use it here
     // Fetch both datasets and combine them
@@ -129,7 +139,7 @@ const ExpenseTable = () => {
       setRows([]);
       setIsLoading(false); // Stop loading
     });
-  }, []);
+  }, [showAddTransaction]);
 
   // Filter and sort data when filters change
   useEffect(() => {
@@ -424,35 +434,66 @@ const ExpenseTable = () => {
               <h1 style={styles.title}>💰 Expense Tracker</h1>
               <p style={styles.subtitle}>Track your expenses from Notion</p>
             </div>
-            <button
-              onClick={logout}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              🚪 Logout
-            </button>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowAddTransaction(true)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                ➕ Add Transaction
+              </button>
+              <button
+                onClick={logout}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                🚪 Logout
+              </button>
+            </div>
           </div>
         </div>
 
@@ -546,6 +587,14 @@ const ExpenseTable = () => {
         {/* Content - Mobile Cards or Desktop Table */}
         {renderMobileView()}
       </div>
+
+      {/* Add Transaction Modal */}
+      {showAddTransaction && (
+        <AddTransaction
+          onClose={() => setShowAddTransaction(false)}
+          onTransactionAdded={refreshData}
+        />
+      )}
     </div>
   );
 };
