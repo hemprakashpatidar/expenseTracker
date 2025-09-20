@@ -37,18 +37,51 @@ const ExpenseTable = () => {
 
   useEffect(() => {
     setIsLoading(true); // Start loading
-    
+    //Todo add fucntion to fetch data from notion in separate file and use it here
     // Fetch both datasets and combine them
+    const apiPath = process.env.REACT_APP_API_PATH;
+    // Get user data from localStorage
+    const authData = localStorage.getItem('expense_tracker_auth');
+    let userData = null;
+    if (authData) {
+      try {
+        userData = JSON.parse(authData);
+      } catch (error) {
+        console.error('Error parsing auth data:', error);
+      }
+    }
+    
+    // Prepare request body with user data
+    const requestBody = {
+      userName: userData?.userName || '',
+      uuid: userData?.uuid || '',
+      type: 'default',
+      isMe: userData?.isMe || false
+    };
+    
+    const ccRequestBody = {
+      userName: userData?.userName || '',
+      uuid: userData?.uuid || '',
+      type: 'cc',
+      isMe: userData?.isMe || false
+    };
+    
     Promise.all([
-      fetch("https://ver-px.vercel.app/api/notion", {
+      fetch(`${apiPath}/api/notion`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': 'Bearer authenticated'
-        }
+        },
+        body: JSON.stringify(requestBody)
       }).then(res => res.json()),
-      fetch('https://ver-px.vercel.app/api/notion?type=cc', {
+      fetch(`${apiPath}/api/notion`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': 'Bearer authenticated'
-        }
+        },
+        body: JSON.stringify(ccRequestBody)
       }).then(res => res.json()).catch(err => {
         console.error('Error loading fallback data:', err);
         return { results: [] };
