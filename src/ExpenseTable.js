@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from './contexts/AuthContext.js';
 import Loader from './components/Loader.js';
+import AddTransaction from './components/AddTransaction.js';
 import { addAnimationStyles } from './utils/animations.js';
 import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
@@ -20,11 +21,19 @@ const ExpenseTable = () => {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
 
   // Add animations on component mount
   useEffect(() => {
     addAnimationStyles();
   }, []);
+
+  // Function to refresh data
+  const refreshData = () => {
+    // Trigger the useEffect to reload data
+    // setIsLoading(true);
+    // The useEffect will handle the actual data loading
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -36,6 +45,7 @@ const ExpenseTable = () => {
   }, []);
 
   useEffect(() => {
+    if (showAddTransaction) return
     setIsLoading(true); // Start loading
     //Todo add fucntion to fetch data from notion in separate file and use it here
     // Fetch both datasets and combine them
@@ -66,7 +76,8 @@ const ExpenseTable = () => {
       isMe: userData?.isMe || false
     };
     
-    Promise.all([
+    // Prepare API calls - only include cc data if isMe is true
+    const apiCalls = [
       fetch(`${apiPath}/api/notion`, {
         method: 'POST',
         headers: {
@@ -74,35 +85,43 @@ const ExpenseTable = () => {
           'Authorization': 'Bearer authenticated'
         },
         body: JSON.stringify(requestBody)
-      }).then(res => res.json()),
-      fetch(`${apiPath}/api/notion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer authenticated'
-        },
-        body: JSON.stringify(ccRequestBody)
-      }).then(res => res.json()).catch(err => {
-        console.error('Error loading fallback data:', err);
-        return { results: [] };
-      })
-    ])
-    .then(([data1, data2]) => {
-      // Parse data from first file
-      const parsed1 = data1.results.map(row => ({
+      }).then(res => res.json())
+    ];
+
+    // Only add cc data fetch if isMe is true
+    if (userData?.isMe) {
+      apiCalls.push(
+        fetch(`${apiPath}/api/notion`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer authenticated'
+          },
+          body: JSON.stringify(ccRequestBody)
+        }).then(res => res.json()).catch(err => {
+          console.error('Error loading cc data:', err);
+          return { results: [] };
+        })
+      );
+    }
+
+    Promise.all(apiCalls)
+    .then((results) => {
+      // Parse data from first file (always present)
+      const parsed1 = results[0].results.map(row => ({
         expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
         amount: row.properties.Amount?.number || 0,
         date: formatDate(row.properties.Date?.date?.start),
         category: row.properties.Category?.select?.name || 'Other'
       }));
 
-      // Parse data from second file
-      const parsed2 = data2.results.map(row => ({
+      // Parse data from second file (only if isMe is true)
+      const parsed2 = results[1] ? results[1].results.map(row => ({
         expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
         amount: row.properties.Amount?.number || 0,
         date: formatDate(row.properties.Date?.date?.start),
         category: row.properties.Category?.select?.name || 'Other'
-      }));
+      })) : [];
 
       // Combine both datasets
       const combinedData = [...parsed1, ...parsed2];
@@ -115,31 +134,12 @@ const ExpenseTable = () => {
     })
     .catch(error => {
       console.error('Error fetching data:', error);
-      setIsLoading(true); // Keep loading while trying fallback
-      
-      // Fallback: try to load just the local file if API fails
-      fetch('/notion-data.json')
-        .then(res => res.json())
-        .then(data => {
-          const parsed = data.results.map(row => ({
-            expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
-            amount: row.properties.Amount?.number || 0,
-            date: formatDate(row.properties.Date?.date?.start),
-            category: row.properties.Category?.select?.name || 'Other'
-          }));
-          setOriginalData(parsed);
-          setRows(sortData([...parsed], sortBy, sortDirection));
-          setIsLoading(false); // Stop loading
-        })
-        .catch(fallbackError => {
-          console.error('Error loading fallback data:', fallbackError);
-          // Set empty data if all fails
-          setOriginalData([]);
-          setRows([]);
-          setIsLoading(false); // Stop loading
-        });
+      // Set empty data if API fails
+      setOriginalData([]);
+      setRows([]);
+      setIsLoading(false); // Stop loading
     });
-  }, []);
+  }, [showAddTransaction]);
 
   // Filter and sort data when filters change
   useEffect(() => {
@@ -434,35 +434,66 @@ const ExpenseTable = () => {
               <h1 style={styles.title}>💰 Expense Tracker</h1>
               <p style={styles.subtitle}>Track your expenses from Notion</p>
             </div>
-            <button
-              onClick={logout}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              🚪 Logout
-            </button>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowAddTransaction(true)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                ➕ Add Transaction
+              </button>
+              <button
+                onClick={logout}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                🚪 Logout
+              </button>
+            </div>
           </div>
         </div>
 
@@ -556,6 +587,14 @@ const ExpenseTable = () => {
         {/* Content - Mobile Cards or Desktop Table */}
         {renderMobileView()}
       </div>
+
+      {/* Add Transaction Modal */}
+      {showAddTransaction && (
+        <AddTransaction
+          onClose={() => setShowAddTransaction(false)}
+          onTransactionAdded={refreshData}
+        />
+      )}
     </div>
   );
 };

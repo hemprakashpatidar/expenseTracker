@@ -60,6 +60,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (userData) => {
+    try {
+      const apiPath = process.env.REACT_APP_API_PATH;
+      const response = await fetch(`${apiPath}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        return { success: true, user: result.user };
+      } else {
+        return { success: false, error: result.message || 'Registration failed' };
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
+
   const logout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('expense_tracker_auth');
@@ -68,6 +92,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     isAuthenticated,
     login,
+    register,
     logout,
     loading
   };

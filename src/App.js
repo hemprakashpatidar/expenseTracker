@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext.js';
 import Login from './components/Login.js';
+import Register from './components/Register.js';
 import ExpenseTable from './ExpenseTable.js';
 
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth();
+  const [currentPage, setCurrentPage] = useState('login');
 
   if (loading) {
     return (
@@ -33,7 +35,16 @@ const AppContent = () => {
     );
   }
 
-  return isAuthenticated ? <ExpenseTable /> : <Login />;
+  if (isAuthenticated) {
+    return <ExpenseTable />;
+  }
+
+  // Handle page routing
+  if (currentPage === 'register') {
+    return <Register onSwitchToLogin={() => setCurrentPage('login')} />;
+  }
+
+  return <Login onSwitchToRegister={() => setCurrentPage('register')} />;
 };
 
 function App() {
