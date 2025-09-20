@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.js';
 
-const Login = () => {
+const Login = ({ onSwitchToRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -217,6 +217,30 @@ const Login = () => {
             {loading && <span style={styles.loadingSpinner}></span>}
             {loading ? 'Signing in...' : '🚀 Sign In'}
           </button>
+          
+          <div style={{
+            textAlign: 'center',
+            marginTop: '1.5rem',
+            fontSize: '0.9rem',
+            color: '#6c757d'
+          }}>
+            Don't have an account?{' '}
+            <button
+              type="button"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#667eea',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+              onClick={onSwitchToRegister}
+            >
+              Create one here
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -66,7 +66,8 @@ const ExpenseTable = () => {
       isMe: userData?.isMe || false
     };
     
-    Promise.all([
+    // Prepare API calls - only include cc data if isMe is true
+    const apiCalls = [
       fetch(`${apiPath}/api/notion`, {
         method: 'POST',
         headers: {
@@ -74,35 +75,43 @@ const ExpenseTable = () => {
           'Authorization': 'Bearer authenticated'
         },
         body: JSON.stringify(requestBody)
-      }).then(res => res.json()),
-      fetch(`${apiPath}/api/notion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer authenticated'
-        },
-        body: JSON.stringify(ccRequestBody)
-      }).then(res => res.json()).catch(err => {
-        console.error('Error loading fallback data:', err);
-        return { results: [] };
-      })
-    ])
-    .then(([data1, data2]) => {
-      // Parse data from first file
-      const parsed1 = data1.results.map(row => ({
+      }).then(res => res.json())
+    ];
+
+    // Only add cc data fetch if isMe is true
+    if (userData?.isMe) {
+      apiCalls.push(
+        fetch(`${apiPath}/api/notion`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer authenticated'
+          },
+          body: JSON.stringify(ccRequestBody)
+        }).then(res => res.json()).catch(err => {
+          console.error('Error loading cc data:', err);
+          return { results: [] };
+        })
+      );
+    }
+
+    Promise.all(apiCalls)
+    .then((results) => {
+      // Parse data from first file (always present)
+      const parsed1 = results[0].results.map(row => ({
         expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
         amount: row.properties.Amount?.number || 0,
         date: formatDate(row.properties.Date?.date?.start),
         category: row.properties.Category?.select?.name || 'Other'
       }));
 
-      // Parse data from second file
-      const parsed2 = data2.results.map(row => ({
+      // Parse data from second file (only if isMe is true)
+      const parsed2 = results[1] ? results[1].results.map(row => ({
         expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
         amount: row.properties.Amount?.number || 0,
         date: formatDate(row.properties.Date?.date?.start),
         category: row.properties.Category?.select?.name || 'Other'
-      }));
+      })) : [];
 
       // Combine both datasets
       const combinedData = [...parsed1, ...parsed2];
@@ -115,29 +124,10 @@ const ExpenseTable = () => {
     })
     .catch(error => {
       console.error('Error fetching data:', error);
-      setIsLoading(true); // Keep loading while trying fallback
-      
-      // Fallback: try to load just the local file if API fails
-      fetch('/notion-data.json')
-        .then(res => res.json())
-        .then(data => {
-          const parsed = data.results.map(row => ({
-            expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
-            amount: row.properties.Amount?.number || 0,
-            date: formatDate(row.properties.Date?.date?.start),
-            category: row.properties.Category?.select?.name || 'Other'
-          }));
-          setOriginalData(parsed);
-          setRows(sortData([...parsed], sortBy, sortDirection));
-          setIsLoading(false); // Stop loading
-        })
-        .catch(fallbackError => {
-          console.error('Error loading fallback data:', fallbackError);
-          // Set empty data if all fails
-          setOriginalData([]);
-          setRows([]);
-          setIsLoading(false); // Stop loading
-        });
+      // Set empty data if API fails
+      setOriginalData([]);
+      setRows([]);
+      setIsLoading(false); // Stop loading
     });
   }, []);
 
