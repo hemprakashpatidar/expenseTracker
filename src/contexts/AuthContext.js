@@ -43,11 +43,10 @@ export const AuthProvider = ({ children }) => {
       const loginResponse = await response.json();
       if (response.ok) {
         setIsAuthenticated(true);
-        console.log('userRERREEE', loginResponse)
         // Store user data as JSON string in localStorage
         localStorage.setItem('expense_tracker_auth', JSON.stringify({
-          userName: loginResponse.user.userName, 
-          uuid: loginResponse.user.uuid, 
+          userName: loginResponse.user.userName,
+          uuid: loginResponse.user.uuid,
           isMe: loginResponse.user.isMe
         }));
         return { success: true, user: loginResponse.user };

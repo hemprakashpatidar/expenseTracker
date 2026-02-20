@@ -7,59 +7,34 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
   const [formData, setFormData] = useState({
     expense: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
     category: 'Other',
-    paymentMethod: 'UPI' 
+    paymentMethod: 'UPI'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  // Available categories
   const categories = [
-    'Food & Dining',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Bills & Utilities',
-    'Healthcare',
-    'Travel',
-    'Education',
-    'Other'
+    'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
+    'Bills & Utilities', 'Healthcare', 'Travel', 'Education', 'Groceries'
   ];
-  const paymentMethods = ['Cash', 'Card', 'UPI', 'Bank Transfer', 'Wallet'];
+  const paymentMethods = ['Cash', 'Card', 'PhonePe', 'PayTM', 'Google Pay', 'Bank Transfer', 'RuPay', 'Wallet'];
 
-  // Input sanitization
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return input;
-    return input.replace(/[<>\"'&]/g, (match) => {
-      const escapeMap = {
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#x27;',
-        '&': '&amp;'
-      };
-      return escapeMap[match];
-    });
+    return input.replace(/[<>"'&]/g, m => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;' }[m]));
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: sanitizeInput(value)
-    }));
+    setFormData(prev => ({ ...prev, [name]: sanitizeInput(value) }));
   };
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
-    // Allow only numbers and one decimal point
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setFormData(prev => ({
-        ...prev,
-        amount: value
-      }));
+      setFormData(prev => ({ ...prev, amount: value }));
     }
   };
 
@@ -68,13 +43,11 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
     setError('');
     setLoading(true);
 
-    // Validation
     if (!formData.expense.trim() || !formData.amount.trim()) {
       setError('Please fill in all required fields.');
       setLoading(false);
       return;
     }
-
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
       setError('Please enter a valid amount.');
@@ -84,457 +57,442 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
 
     try {
       const apiPath = process.env.REACT_APP_API_PATH;
-      
-      // Get user data from localStorage
       const authData = localStorage.getItem('expense_tracker_auth');
       let userData = null;
-      if (authData) {
-        try {
-          userData = JSON.parse(authData);
-        } catch (error) {
-          console.error('Error parsing auth data:', error);
-        }
-      }
-
-      // Prepare request body
-      const requestBody = {
-        userName: userData?.userName || '',
-        uuid: userData?.uuid || '',
-        isMe: userData?.isMe || false,
-          expense: formData.expense.trim(),
-          amount: amount,
-          date: formData.date,
-          category: formData.category,
-          paymentMethod: formData.paymentMethod
-      };
+      if (authData) { try { userData = JSON.parse(authData); } catch (e) { } }
 
       const response = await fetch(`${apiPath}/api/transaction`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer authenticated'
-        },
-        body: JSON.stringify(requestBody)
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' },
+        body: JSON.stringify({
+          userName: userData?.userName || '',
+          uuid: userData?.uuid || '',
+          isMe: userData?.isMe || false,
+          expense: formData.expense.trim(),
+          amount,
+          date: formData.date,
+          category: formData.category === 'Other (custom)' ? (formData.customCategory?.trim() || 'Other') : formData.category,
+          paymentMethod: formData.paymentMethod === 'Other (custom)' ? (formData.customPayment?.trim() || 'Other') : formData.paymentMethod
+        })
       });
 
       const result = await response.json();
-
       if (response.ok) {
-        // Success - close modal and refresh data
-        onTransactionAdded && onTransactionAdded();
+        onTransactionAdded?.();
         onClose();
       } else {
         setError(result.message || 'Failed to add transaction. Please try again.');
       }
-    } catch (error) {
-      console.error('Add transaction error:', error);
+    } catch (err) {
       setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const styles = {
-    overlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10000,
-      padding: '20px'
-    },
-    modal: {
-      background: 'white',
-      borderRadius: '16px',
-      padding: '2rem',
-      maxWidth: '500px',
-      width: '100%',
-      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-      animation: 'slideInUp 0.3s ease-out',
-      maxHeight: '90vh',
-      overflowY: 'auto'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '1.5rem',
-      paddingBottom: '1rem',
-      borderBottom: '2px solid #f8f9fa'
-    },
-    title: {
-      fontSize: '1.5rem',
-      fontWeight: '600',
-      color: '#2c3e50',
-      margin: 0
-    },
-    closeButton: {
-      background: 'none',
-      border: 'none',
-      fontSize: '1.5rem',
-      cursor: 'pointer',
-      color: '#6c757d',
-      padding: '4px',
-      borderRadius: '4px',
-      transition: 'all 0.2s ease'
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1.5rem'
-    },
-    inputGroup: {
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    label: {
-      fontSize: '0.9rem',
-      fontWeight: '600',
-      color: '#2c3e50',
-      marginBottom: '0.5rem'
-    },
-    input: {
-      padding: '12px 16px',
-      borderRadius: '10px',
-      border: '2px solid #e9ecef',
-      fontSize: '1rem',
-      outline: 'none',
-      transition: 'all 0.3s ease',
-      boxSizing: 'border-box'
-    },
-    select: {
-      padding: '12px 16px',
-      borderRadius: '10px',
-      border: '2px solid #e9ecef',
-      fontSize: '1rem',
-      outline: 'none',
-      transition: 'all 0.3s ease',
-      backgroundColor: 'white',
-      cursor: 'pointer'
-    },
-    categoryOption: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '8px 12px',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      marginBottom: '4px'
-    },
-    categoryGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-      gap: '8px',
-      marginTop: '8px'
-    },
-    categoryButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '6px',
-      padding: '10px 12px',
-      borderRadius: '8px',
-      border: '2px solid #e9ecef',
-      background: 'white',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      fontSize: '0.9rem',
-      fontWeight: '500'
-    },
-    selectedCategory: {
-      borderColor: '#667eea',
-      backgroundColor: '#f8f9ff'
-    },
-    buttonGroup: {
-      display: 'flex',
-      gap: '1rem',
-      marginTop: '1rem'
-    },
-    button: {
-      flex: 1,
-      padding: '12px 24px',
-      borderRadius: '10px',
-      border: 'none',
-      fontSize: '1rem',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease'
-    },
-    primaryButton: {
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      color: 'white',
-      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
-    },
-    secondaryButton: {
-      background: '#f8f9fa',
-      color: '#6c757d',
-      border: '2px solid #e9ecef'
-    },
-    error: {
-      background: 'linear-gradient(135deg, #e74c3c, #c0392b)',
-      color: 'white',
-      padding: '12px 16px',
-      borderRadius: '8px',
-      fontSize: '0.9rem',
-      textAlign: 'center',
-      marginBottom: '1rem'
-    },
-    loadingSpinner: {
-      display: 'inline-block',
-      width: '16px',
-      height: '16px',
-      border: '2px solid rgba(255, 255, 255, 0.3)',
-      borderRadius: '50%',
-      borderTopColor: '#fff',
-      animation: 'spin 1s ease-in-out infinite',
-      marginRight: '8px'
-    }
-  };
-
-  // Add spinner animation
-  useEffect(() => {
-    if (!document.getElementById('add-transaction-spinner')) {
-      const style = document.createElement('style');
-      style.id = 'add-transaction-spinner';
-      style.textContent = `
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
-
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div style={styles.header}>
-          <h2 style={styles.title}>💰 Add New Transaction</h2>
-          <button
-            style={styles.closeButton}
-            onClick={onClose}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#f8f9fa';
-              e.target.style.color = '#2c3e50';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = '#6c757d';
-            }}
-          >
-            ✕
-          </button>
-        </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500;600&display=swap');
 
-        <form style={styles.form} onSubmit={handleSubmit}>
-          {error && (
-            <div style={styles.error}>
-              ⚠️ {error}
+        .at-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 15, 30, 0.55);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          z-index: 10000;
+          padding: 0;
+          animation: at-fade-in 0.2s ease;
+        }
+
+        @keyframes at-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes at-slide-up { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes at-spin { to { transform: rotate(360deg); } }
+
+        .at-modal {
+          background: #fff;
+          border-radius: 24px 24px 0 0;
+          width: 100%;
+          max-width: 480px;
+          max-height: 92vh;
+          overflow-y: auto;
+          padding: 0;
+          animation: at-slide-up 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        /* drag handle */
+        .at-handle {
+          width: 36px;
+          height: 4px;
+          background: #e2e4ea;
+          border-radius: 2px;
+          margin: 12px auto 0;
+        }
+
+        /* header */
+        .at-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 18px 12px;
+          border-bottom: 1px solid #f0f1f5;
+        }
+        .at-header-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1a1a2e;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+        .at-close {
+          width: 30px;
+          height: 30px;
+          background: #f3f4f6;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          color: #6b7280;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .at-close:hover { background: #e5e7eb; color: #1a1a2e; }
+
+        /* body */
+        .at-body {
+          padding: 14px 18px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 13px;
+        }
+
+        /* error */
+        .at-error {
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #dc2626;
+          border-radius: 10px;
+          padding: 9px 12px;
+          font-size: 12px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        /* field */
+        .at-field { display: flex; flex-direction: column; gap: 5px; }
+        .at-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .at-input, .at-select {
+          background: #f8f9fb;
+          border: 1.5px solid transparent;
+          border-radius: 11px;
+          padding: 10px 12px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 500;
+          color: #1a1a2e;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .at-input:focus, .at-select:focus {
+          border-color: #4f46e5;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .at-input::placeholder { color: #c0c4d0; }
+        .at-select { cursor: pointer; }
+
+        /* amount row */
+        .at-amount-row { display: flex; gap: 8px; }
+        .at-amount-wrap {
+          flex: 1;
+          position: relative;
+        }
+        .at-currency {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 14px;
+          font-weight: 700;
+          color: #4f46e5;
+          font-family: 'DM Mono', monospace;
+          pointer-events: none;
+        }
+        .at-amount-input {
+          background: #f8f9fb;
+          border: 1.5px solid transparent;
+          border-radius: 11px;
+          padding: 10px 12px 10px 26px;
+          font-family: 'DM Mono', monospace;
+          font-size: 18px;
+          font-weight: 600;
+          color: #1a1a2e;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .at-amount-input:focus {
+          border-color: #4f46e5;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .at-amount-input::placeholder { color: #c0c4d0; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+
+        /* styled select wrapper */
+        .at-select-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .at-select-icon {
+          position: absolute;
+          left: 12px;
+          font-size: 16px;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .at-select-chevron {
+          position: absolute;
+          right: 12px;
+          font-size: 11px;
+          color: #9ca3af;
+          pointer-events: none;
+        }
+        .at-styled-select {
+          width: 100%;
+          background: #f8f9fb;
+          border: 1.5px solid transparent;
+          border-radius: 11px;
+          padding: 10px 34px 10px 36px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          color: #1a1a2e;
+          outline: none;
+          cursor: pointer;
+          appearance: none;
+          -webkit-appearance: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .at-styled-select:focus {
+          border-color: #4f46e5;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .at-custom-input {
+          margin-top: 7px;
+          animation: at-slide-up 0.18s ease;
+        }
+
+        /* actions */
+        .at-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 2px;
+        }
+        .at-cancel {
+          flex: 1;
+          background: #f3f4f6;
+          border: none;
+          border-radius: 12px;
+          padding: 12px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          color: #6b7280;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .at-cancel:hover { background: #e5e7eb; }
+        .at-submit {
+          flex: 2;
+          background: #4f46e5;
+          border: none;
+          border-radius: 12px;
+          padding: 12px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          transition: opacity 0.2s, transform 0.15s;
+        }
+        .at-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+        .at-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .at-spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: at-spin 0.7s linear infinite;
+        }
+      `}</style>
+
+      <div className="at-overlay" onClick={onClose}>
+        <div className="at-modal" onClick={e => e.stopPropagation()}>
+          <div className="at-handle" />
+
+          <div className="at-header">
+            <div className="at-header-title">
+              <span>💸</span> Add Transaction
             </div>
-          )}
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label} htmlFor="expense">
-              📝 Description *
-            </label>
-            <input
-              id="expense"
-              name="expense"
-              type="text"
-              value={formData.expense}
-              onChange={handleInputChange}
-              style={styles.input}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#667eea';
-                e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e9ecef';
-                e.target.style.boxShadow = 'none';
-              }}
-              required
-              disabled={loading}
-              placeholder="What did you spend on?"
-            />
+            <button className="at-close" onClick={onClose}>✕</button>
           </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label} htmlFor="amount">
-              💵 Amount (₹) *
-            </label>
-            <input
-              id="amount"
-              name="amount"
-              type="text"
-              value={formData.amount}
-              onChange={handleAmountChange}
-              style={styles.input}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#667eea';
-                e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e9ecef';
-                e.target.style.boxShadow = 'none';
-              }}
-              required
-              disabled={loading}
-              placeholder="0.00"
-            />
-          </div>
+          <form className="at-body" onSubmit={handleSubmit}>
+            {error && (
+              <div className="at-error">⚠️ {error}</div>
+            )}
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label} htmlFor="date">
-              📅 Date *
-            </label>
-            <input
-              id="date"
-              name="date"
-              type="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              style={styles.input}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#667eea';
-                e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e9ecef';
-                e.target.style.boxShadow = 'none';
-              }}
-              required
-              disabled={loading}
-            />
-          </div>
+            {/* Description */}
+            <div className="at-field">
+              <label className="at-label">Description</label>
+              <input
+                className="at-input"
+                name="expense"
+                type="text"
+                value={formData.expense}
+                onChange={handleInputChange}
+                placeholder="What did you spend on?"
+                required
+                disabled={loading}
+              />
+            </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              🏷️ Category *
-            </label>
-            <div style={styles.categoryGrid}>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  style={{
-                    ...styles.categoryButton,
-                    ...(formData.category === category ? styles.selectedCategory : {}),
-                    borderColor: formData.category === category ? getCategoryColor(category) : '#e9ecef',
-                    backgroundColor: formData.category === category ? `${getCategoryColor(category)}20` : 'white'
-                  }}
-                  onClick={() => setFormData(prev => ({ ...prev, category }))}
+            {/* Amount + Date row */}
+            <div className="at-amount-row">
+              <div className="at-field" style={{ flex: 1 }}>
+                <label className="at-label">Amount</label>
+                <div className="at-amount-wrap">
+                  <span className="at-currency">₹</span>
+                  <input
+                    className="at-amount-input"
+                    type="text"
+                    value={formData.amount}
+                    onChange={handleAmountChange}
+                    placeholder="0.00"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="at-field" style={{ flex: 1 }}>
+                <label className="at-label">Date</label>
+                <input
+                  className="at-input"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  required
                   disabled={loading}
-                  onMouseEnter={(e) => {
-                    if (formData.category !== category) {
-                      e.target.style.backgroundColor = '#f8f9fa';
-                      e.target.style.borderColor = getCategoryColor(category);
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (formData.category !== category) {
-                      e.target.style.backgroundColor = 'white';
-                      e.target.style.borderColor = '#e9ecef';
-                    }
-                  }}
-                >
-                  <span style={{ fontSize: '1.1rem' }}>
-                    {getCategoryIcon(category)}
-                  </span>
-                  <span>{category}</span>
-                </button>
-              ))}
+                />
+              </div>
             </div>
-          </div>
-          <div style={styles.inputGroup}>
-  <label style={styles.label} htmlFor="paymentMethod">
-    💳 Payment Type *
-  </label>
-  <select
-    id="paymentMethod"
-    name="paymentMethod"
-    value={formData.paymentMethod}
-    onChange={handleInputChange}
-    style={styles.select}
-    disabled={loading}
-  >
-    {paymentMethods.map((type) => (
-      <option key={type} value={type}>
-        {type}
-      </option>
-    ))}
-  </select>
-</div>
 
-          <div style={styles.buttonGroup}>
-            <button
-              type="button"
-              style={{
-                ...styles.button,
-                ...styles.secondaryButton
-              }}
-              onClick={onClose}
-              disabled={loading}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = '#e9ecef';
-                  e.target.style.transform = 'translateY(-1px)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = '#f8f9fa';
-                  e.target.style.transform = 'translateY(0)';
-                }
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={{
-                ...styles.button,
-                ...styles.primaryButton,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-              disabled={loading}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
-                }
-              }}
-            >
-              {loading && <span style={styles.loadingSpinner}></span>}
-              {loading ? 'Adding...' : '➕ Add Transaction'}
-            </button>
-          </div>
-        </form>
+            {/* Category */}
+            <div className="at-field">
+              <label className="at-label">Category</label>
+              <div className="at-select-wrap">
+                <span className="at-select-icon">
+                  {getCategoryIcon(formData.category === 'Other (custom)' ? 'Other' : formData.category)}
+                </span>
+                <select
+                  className="at-styled-select"
+                  value={formData.category}
+                  onChange={e => setFormData(p => ({ ...p, category: e.target.value, customCategory: '' }))}
+                  disabled={loading}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{getCategoryIcon(cat)} {cat}</option>
+                  ))}
+                  <option value="Other (custom)">✏️ Other (custom)…</option>
+                </select>
+                <span className="at-select-chevron">▾</span>
+              </div>
+              {formData.category === 'Other (custom)' && (
+                <input
+                  className="at-input at-custom-input"
+                  type="text"
+                  name="customCategory"
+                  value={formData.customCategory || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter custom category…"
+                  disabled={loading}
+                  autoFocus
+                />
+              )}
+            </div>
+
+            {/* Payment method */}
+            <div className="at-field">
+              <label className="at-label">Payment Method</label>
+              <div className="at-select-wrap">
+                <span className="at-select-icon">💳</span>
+                <select
+                  className="at-styled-select"
+                  value={formData.paymentMethod}
+                  onChange={e => setFormData(p => ({ ...p, paymentMethod: e.target.value, customPayment: '' }))}
+                  disabled={loading}
+                >
+                  {paymentMethods.map(pm => (
+                    <option key={pm} value={pm}>{pm}</option>
+                  ))}
+                  <option value="Other (custom)">✏️ Other (custom)…</option>
+                </select>
+                <span className="at-select-chevron">▾</span>
+              </div>
+              {formData.paymentMethod === 'Other (custom)' && (
+                <input
+                  className="at-input at-custom-input"
+                  type="text"
+                  name="customPayment"
+                  value={formData.customPayment || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter payment method…"
+                  disabled={loading}
+                  autoFocus
+                />
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="at-actions">
+              <button type="button" className="at-cancel" onClick={onClose} disabled={loading}>
+                Cancel
+              </button>
+              <button type="submit" className="at-submit" disabled={loading}>
+                {loading ? <><span className="at-spinner" /> Adding...</> : <>＋ Add Transaction</>}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
