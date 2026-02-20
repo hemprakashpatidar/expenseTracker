@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getCategoryColor, getCategoryIcon } from '../utils/categoryUtils.js';
+import { getCategoryIcon } from '../utils/categoryUtils.js';
 
 // Convert display date (DD-MM-YY or DD-MM-YYYY) back to YYYY-MM-DD for <input type="date">
 const toInputDate = (dateStr) => {

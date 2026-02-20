@@ -21,7 +21,7 @@ const Register = ({ onSwitchToLogin }) => {
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
+
     const score = [
       password.length >= minLength,
       hasUpperCase,
@@ -29,7 +29,7 @@ const Register = ({ onSwitchToLogin }) => {
       hasNumbers,
       hasSpecialChar
     ].filter(Boolean).length;
-    
+
     return {
       score,
       isValid: score >= 4,
@@ -47,7 +47,7 @@ const Register = ({ onSwitchToLogin }) => {
   // Input sanitization
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return input;
-    return input.replace(/[<>\"'&]/g, (match) => {
+    return input.replace(/[<>"'&]/g, (match) => {
       const escapeMap = {
         '<': '&lt;',
         '>': '&gt;',
@@ -313,15 +313,15 @@ const Register = ({ onSwitchToLogin }) => {
           <h1 style={styles.title}>📝 Register</h1>
           <p style={styles.subtitle}>Create your expense tracker account</p>
         </div>
-        
+
         <form style={styles.form} onSubmit={handleSubmit}>
           {error && (
             <div style={styles.error}>
               ⚠️ {error}
             </div>
           )}
-          
-          
+
+
           <div style={styles.inputGroup}>
             <label style={styles.label} htmlFor="username">
               👤 Username *
@@ -346,8 +346,8 @@ const Register = ({ onSwitchToLogin }) => {
               placeholder="Choose a username"
             />
           </div>
-          
-          
+
+
           <div style={styles.inputGroup}>
             <label style={styles.label} htmlFor="password">
               🔑 Password *
@@ -381,12 +381,12 @@ const Register = ({ onSwitchToLogin }) => {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
-            
+
             {/* Password Strength Indicator */}
             {formData.password && (
               <div style={styles.passwordStrength}>
                 <div style={styles.strengthBar}>
-                  <div 
+                  <div
                     style={{
                       ...styles.strengthFill,
                       width: `${(passwordStrength.score / 5) * 100}%`,
@@ -403,7 +403,7 @@ const Register = ({ onSwitchToLogin }) => {
               </div>
             )}
           </div>
-          
+
           <div style={styles.inputGroup}>
             <label style={styles.label} htmlFor="confirmPassword">
               🔑 Confirm Password *
@@ -438,7 +438,7 @@ const Register = ({ onSwitchToLogin }) => {
               </button>
             </div>
           </div>
-          
+
           <button
             type="submit"
             style={{
@@ -463,7 +463,7 @@ const Register = ({ onSwitchToLogin }) => {
             {loading && <span style={styles.loadingSpinner}></span>}
             {loading ? 'Creating Account...' : '🚀 Create Account'}
           </button>
-          
+
           <div style={styles.loginLink}>
             Already have an account?{' '}
             <button

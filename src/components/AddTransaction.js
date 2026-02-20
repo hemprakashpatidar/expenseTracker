@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext.js';
-import { getCategoryColor, getCategoryIcon } from '../utils/categoryUtils.js';
-import { formatAmount } from '../utils/formatters.js';
+import React, { useState } from 'react';
+import { getCategoryIcon } from '../utils/categoryUtils.js';
 
 const AddTransaction = ({ onClose, onTransactionAdded }) => {
   const [formData, setFormData] = useState({
@@ -13,7 +11,6 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
 
   const categories = [
     'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
