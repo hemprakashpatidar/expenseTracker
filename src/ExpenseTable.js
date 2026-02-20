@@ -18,13 +18,10 @@ const ExpenseTable = () => {
   const { logout } = useAuth();
   const [rows, setRows] = useState([]);
   const [originalData, setOriginalData] = useState([]);
-  const [sortBy, setSortBy] = useState('date');
-  const [sortDirection, setSortDirection] = useState('asc');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCard, setExpandedCard] = useState(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -32,6 +29,8 @@ const ExpenseTable = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deletingIndex, setDeletingIndex] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const sortBy = 'date';
+  const sortDirection = 'desc';
 
   const handleDelete = async (e, row, index) => {
     e.stopPropagation();
@@ -59,12 +58,6 @@ const ExpenseTable = () => {
   };
 
   useEffect(() => { addAnimationStyles(); }, []);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     if (showAddTransaction) return;
@@ -270,7 +263,7 @@ const ExpenseTable = () => {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          align-items: flex-end;
+          align-items: center;
           flex-shrink: 0;
           min-width: 120px;
         }
