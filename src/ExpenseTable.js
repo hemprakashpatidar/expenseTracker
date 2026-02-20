@@ -2,15 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from './contexts/AuthContext.js';
 import Loader from './components/Loader.js';
 import AddTransaction from './components/AddTransaction.js';
+import EditTransaction from './components/EditTransaction.js';
 import { addAnimationStyles } from './utils/animations.js';
 import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
 import { formatAmount } from './utils/formatters.js';
 import { sortData } from './utils/dataUtils.js';
-import { stylesComponents } from './styles/styles.js';
 
-
-
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 const ExpenseTable = () => {
   const { logout } = useAuth();
@@ -25,816 +27,747 @@ const ExpenseTable = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deletingIndex, setDeletingIndex] = useState(null);
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
-
-
-
-  // Add animations on component mount
-  useEffect(() => {
-    addAnimationStyles();
-  }, []);
-
-
-
-
-  // Function to refresh data
-  const refreshData = () => {
-    // Trigger the useEffect to reload data
-    // setIsLoading(true);
-    // The useEffect will handle the actual data loading
+  const handleDelete = async (e, row, index) => {
+    e.stopPropagation();
+    if (deleteConfirm !== index) { setDeleteConfirm(index); return; }
+    setDeletingIndex(index);
+    setDeleteConfirm(null);
+    try {
+      const apiPath = process.env.REACT_APP_API_PATH;
+      const authData = localStorage.getItem('expense_tracker_auth');
+      let userData = null;
+      if (authData) { try { userData = JSON.parse(authData); } catch (err) { } }
+      await fetch(`${apiPath}/api/delete-transaction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' },
+        body: JSON.stringify({
+          pageId: row.id,
+          userName: userData?.userName || '',
+          uuid: userData?.uuid || ''
+        })
+      });
+      setOriginalData(prev => prev.filter((_, i) => i !== index));
+      setExpandedCard(null);
+    } catch (err) { console.error('Delete failed', err); }
+    finally { setDeletingIndex(null); }
   };
 
-
-
+  useEffect(() => { addAnimationStyles(); }, []);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-
-
-
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-
-
-
   useEffect(() => {
-    if (showAddTransaction) return
-    setIsLoading(true); // Start loading
-    //Todo add fucntion to fetch data from notion in separate file and use it here
-    // Fetch both datasets and combine them
+    if (showAddTransaction) return;
+    setIsLoading(true);
     const apiPath = process.env.REACT_APP_API_PATH;
-    // Get user data from localStorage
     const authData = localStorage.getItem('expense_tracker_auth');
     let userData = null;
     if (authData) {
-      try {
-        userData = JSON.parse(authData);
-      } catch (error) {
-        console.error('Error parsing auth data:', error);
-      }
+      try { userData = JSON.parse(authData); } catch (e) { console.error(e); }
     }
-    // Prepare request body with user data
-    const requestBody = {
-      userName: userData?.userName || '',
-      uuid: userData?.uuid || '',
-      type: 'default',
-      isMe: userData?.isMe || false,
-      month: selectedMonth,
-      year: selectedYear
-    };
-    const ccRequestBody = {
-      userName: userData?.userName || '',
-      uuid: userData?.uuid || '',
-      type: 'cc',
-      isMe: userData?.isMe || false,
-      month: selectedMonth,
-      year: selectedYear
-    };
-    // Prepare API calls - only include cc data if isMe is true
+    const base = { userName: userData?.userName || '', uuid: userData?.uuid || '', isMe: userData?.isMe || false, month: selectedMonth, year: selectedYear };
     const apiCalls = [
-      fetch(`${apiPath}/api/notion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer authenticated'
-        },
-        body: JSON.stringify(requestBody)
-      }).then(res => res.json())
+      fetch(`${apiPath}/api/notion`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' }, body: JSON.stringify({ ...base, type: 'default' }) }).then(r => r.json())
     ];
-
-
-
-
-    // Only add cc data fetch if isMe is true
     if (userData?.isMe) {
       apiCalls.push(
-        fetch(`${apiPath}/api/notion`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer authenticated'
-          },
-          body: JSON.stringify(ccRequestBody)
-        }).then(res => res.json()).catch(err => {
-          console.error('Error loading cc data:', err);
-          return { results: [] };
-        })
+        fetch(`${apiPath}/api/notion`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' }, body: JSON.stringify({ ...base, type: 'cc' }) }).then(r => r.json()).catch(() => ({ results: [] }))
       );
     }
-
-
-
-
-    Promise.all(apiCalls)
-      .then((results) => {
-        // Parse data from first file (always present)
-        const parsed1 = results[0].results.map(row => ({
-          expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
-          amount: row.properties.Amount?.number || 0,
-          date: formatDate(row.properties.Date?.date?.start),
-          category: row.properties.Category?.select?.name || 'Other'
-        }));
-
-
-
-
-        // Parse data from second file (only if isMe is true)
-        const parsed2 = results[1] ? results[1].results.map(row => ({
-          expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
-          amount: row.properties.Amount?.number || 0,
-          date: formatDate(row.properties.Date?.date?.start),
-          category: row.properties.Category?.select?.name || 'Other'
-        })) : [];
-
-
-
-
-        // Combine both datasets
-        const combinedData = [...parsed1, ...parsed2];
-
-        // Store original data
-        setOriginalData(combinedData);
-        const sortedData = sortData([...combinedData], sortBy, sortDirection);
-        setRows(sortedData);
-        setIsLoading(false); // Stop loading
-      })
-      .catch(error => {
-        console.error('Error fetching data:', error);
-        // Set empty data if API fails
-        setOriginalData([]);
-        setRows([]);
-        setIsLoading(false); // Stop loading
-      });
+    const parse = (results) => results.map(row => ({
+      id: row.id,
+      expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
+      amount: row.properties.Amount?.number || 0,
+      date: formatDate(row.properties.Date?.date?.start),
+      category: row.properties.Category?.select?.name || 'Other',
+      paymentMethod: row.properties['Payment Method']?.select?.name || 'Other',
+    }));
+    Promise.all(apiCalls).then(results => {
+      const combined = [...parse(results[0].results), ...(results[1] ? parse(results[1].results) : [])];
+      setOriginalData(combined);
+      setRows(sortData([...combined], sortBy, sortDirection));
+      setIsLoading(false);
+    }).catch(() => { setOriginalData([]); setRows([]); setIsLoading(false); });
   }, [showAddTransaction, selectedMonth, selectedYear]);
 
-
-
-
-  // Filter and sort data when filters change
   useEffect(() => {
     let filtered = originalData;
-
-
-
-
-    // Apply category filter
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(row => row.category === selectedCategory);
-    }
-
-
-
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(row =>
-        row.expense.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-
-
-
-    const sortedData = sortData([...filtered], sortBy, sortDirection);
-    setRows(sortedData);
+    if (selectedCategory !== 'All') filtered = filtered.filter(r => r.category === selectedCategory);
+    if (searchTerm) filtered = filtered.filter(r => r.expense.toLowerCase().includes(searchTerm.toLowerCase()));
+    setRows(sortData([...filtered], sortBy, sortDirection));
   }, [selectedCategory, searchTerm, sortBy, sortDirection, originalData]);
 
-
-
-
-  // Get unique categories for filter buttons
-  const categories = ['All', ...new Set(originalData.map(row => row.category))];
-
-
-
-
-  // Calculate category breakdown
-  const categoryBreakdown = originalData.reduce((acc, row) => {
-    if (!acc[row.category]) {
-      acc[row.category] = { total: 0, count: 0 };
-    }
-    acc[row.category].total += row.amount;
-    acc[row.category].count += 1;
+  const categories = ['All', ...new Set(originalData.map(r => r.category))];
+  const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
+  const categoryBreakdown = originalData.reduce((acc, r) => {
+    if (!acc[r.category]) acc[r.category] = { total: 0, count: 0 };
+    acc[r.category].total += r.amount;
+    acc[r.category].count += 1;
     return acc;
   }, {});
 
+  if (isLoading) return <Loader message="Loading Your Expenses" subMessage="Fetching data from Notion database" size="large" />;
 
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500;600&display=swap');
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  // Function to toggle sort
-  const handleSort = (newSortBy) => {
-    if (sortBy === newSortBy) {
-      setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
-    } else {
-      setSortBy(newSortBy);
-      setSortDirection('desc');
-    }
-  };
+        .et-root {
+          font-family: 'DM Sans', sans-serif;
+          background: #eef0f5;
+          min-height: 100vh;
+          padding: 12px;
+          display: flex;
+          justify-content: center;
+        }
 
+        .et-app {
+          width: 100%;
+          max-width: 420px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
 
+        /* ── HEADER ── */
+        .et-header {
+          background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 55%, #6366f1 100%);
+          border-radius: 18px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .et-header-left h1 {
+          font-size: 17px;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.3px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .et-header-left p {
+          font-size: 11px;
+          color: rgba(255,255,255,0.5);
+          margin-top: 1px;
+        }
+        .et-logout {
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.22);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 10px;
+          font-size: 12px;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .et-logout:hover { background: rgba(255,255,255,0.22); }
 
+        /* ── CONTROLS ── */
+        .et-controls {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
 
-  // Calculate total amount of filtered data
-  const totalAmount = rows.reduce((sum, row) => sum + row.amount, 0);
+        /* Two-column row */
+        .et-row {
+          display: flex;
+          gap: 8px;
+          align-items: stretch;
+        }
 
+        /* Month selector */
+        .et-month-wrap {
+          background: #fff;
+          border-radius: 12px;
+          padding: 0 10px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+          flex: 1;
+          min-width: 0;
+        }
+        .et-month-icon { font-size: 14px; flex-shrink: 0; }
+        .et-month-select {
+          flex: 1;
+          border: none;
+          outline: none;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a1a2e;
+          padding: 9px 0;
+          background: transparent;
+          cursor: pointer;
+          min-width: 0;
+        }
 
+        /* Add button */
+        .et-add-btn {
+          background: #4f46e5;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          padding: 9px 14px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
+          transition: opacity 0.2s, transform 0.15s;
+        }
+        .et-add-btn:hover { opacity: 0.88; transform: translateY(-1px); }
 
+        /* Search */
+        .et-search {
+          background: #fff;
+          border-radius: 12px;
+          padding: 8px 11px;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+          flex: 1;
+          min-width: 0;
+        }
+        .et-search input {
+          flex: 1;
+          border: none;
+          outline: none;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          color: #1a1a2e;
+          background: transparent;
+          min-width: 0;
+        }
+        .et-search input::placeholder { color: #a0a4b8; }
+        .et-search-icon { color: #a0a4b8; font-size: 12px; flex-shrink: 0; }
 
-  const styles = stylesComponents(isMobile);
-  const renderCategoryBreakdown = () => (
-    <div style={styles.breakdown}>
-      <h3 style={{ margin: '0 0 1rem 0', color: '#2c3e50' }}>💰 Spending Breakdown by Category</h3>
-      <div style={styles.breakdownGrid}>
-        {Object.entries(categoryBreakdown).map(([category, data]) => (
-          <div
-            key={category}
-            style={{
-              ...styles.breakdownCard,
-              backgroundColor: getCategoryColor(category)
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-4px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-              {getCategoryIcon(category)}
+        /* Total card */
+        .et-total {
+          background: linear-gradient(135deg, #15803d, #22c55e);
+          border-radius: 12px;
+          padding: 8px 12px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-end;
+          flex-shrink: 0;
+          min-width: 120px;
+        }
+        .et-total-label { font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; }
+        .et-total-amount {
+          font-family: 'DM Mono', monospace;
+          font-size: 15px;
+          font-weight: 600;
+          color: white;
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 130px;
+        }
+
+        /* Category filters */
+        .et-cats {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding-bottom: 1px;
+        }
+        .et-cats::-webkit-scrollbar { display: none; }
+        .et-cat-btn {
+          background: #fff;
+          border: 1.5px solid transparent;
+          border-radius: 20px;
+          padding: 5px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6b7280;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: all 0.15s;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .et-cat-btn.active {
+          background: #ede9ff;
+          border-color: #4f46e5;
+          color: #4f46e5;
+        }
+
+        /* Breakdown toggle */
+        .et-breakdown-btn {
+          background: linear-gradient(135deg, #7c3aed, #be185d);
+          color: white;
+          border: none;
+          border-radius: 12px;
+          padding: 9px 14px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          width: fit-content;
+          transition: opacity 0.2s;
+        }
+        .et-breakdown-btn:hover { opacity: 0.88; }
+
+        /* Breakdown grid */
+        .et-breakdown {
+          background: #fff;
+          border-radius: 14px;
+          padding: 14px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .et-breakdown h3 {
+          font-size: 13px;
+          font-weight: 700;
+          color: #1a1a2e;
+          margin-bottom: 10px;
+        }
+        .et-breakdown-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 8px;
+        }
+        .et-breakdown-card {
+          border-radius: 12px;
+          padding: 10px;
+          text-align: center;
+          color: white;
+          transition: transform 0.15s;
+          cursor: default;
+        }
+        .et-breakdown-card:hover { transform: translateY(-2px); }
+        .et-breakdown-card .bc-icon { font-size: 18px; margin-bottom: 4px; }
+        .et-breakdown-card .bc-cat { font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.9; }
+        .et-breakdown-card .bc-amt { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; }
+        .et-breakdown-card .bc-count { font-size: 10px; opacity: 0.75; margin-top: 2px; }
+
+        /* Transaction list */
+        .et-list {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+        }
+        .et-section-label {
+          font-size: 10px;
+          font-weight: 700;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          padding: 0 2px;
+        }
+
+        .et-tx {
+          background: #fff;
+          border-radius: 14px;
+          padding: 11px 14px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+          cursor: pointer;
+          transition: transform 0.15s, box-shadow 0.15s;
+          border-left: 3px solid transparent;
+        }
+        .et-tx:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+        .et-tx.expanded { box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+
+        .et-tx-row {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+        }
+        .et-tx-icon {
+          width: 34px; height: 34px;
+          border-radius: 9px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 15px;
+          flex-shrink: 0;
+        }
+        .et-tx-info { flex: 1; min-width: 0; }
+        .et-tx-name {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a1a2e;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .et-tx-date { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+        .et-tx-amount {
+          font-family: 'DM Mono', monospace;
+          font-size: 14px;
+          font-weight: 600;
+          color: #ef4444;
+          flex-shrink: 0;
+        }
+
+        /* Expanded details */
+        .et-expanded-inner {
+          border-top: 1px dashed #f0f0f0;
+          margin-top: 10px;
+          padding-top: 8px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+        }
+        .et-expanded-chip {
+          background: #f8f9fb;
+          border-radius: 9px;
+          padding: 7px 10px;
+        }
+        .et-expanded-label {
+          font-size: 10px;
+          color: #a0a4b8;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          margin-bottom: 2px;
+        }
+        .et-expanded-val {
+          font-size: 13px;
+          color: #1a1a2e;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .et-expanded-footer {
+          grid-column: 1 / -1;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 4px;
+        }
+        .et-expanded-hint {
+          font-size: 10px;
+          color: #c0c4d0;
+        }
+        .et-edit-btn {
+          background: #7c3aed;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 5px 11px;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: opacity 0.2s;
+        }
+        .et-edit-btn:hover { opacity: 0.85; }
+        .et-delete-btn {
+          background: #fff0f0;
+          color: #ef4444;
+          border: 1.5px solid #fecaca;
+          border-radius: 8px;
+          padding: 5px 11px;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: all 0.15s;
+        }
+        .et-delete-btn:hover { background: #fee2e2; }
+        .et-delete-confirm-btn {
+          background: #ef4444;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 5px 11px;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          animation: et-shake 0.3s ease;
+          transition: opacity 0.2s;
+        }
+        .et-delete-confirm-btn:hover { opacity: 0.88; }
+        .et-cancel-delete-btn {
+          background: transparent;
+          color: #9ca3af;
+          border: none;
+          font-size: 11px;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          padding: 5px 6px;
+          text-decoration: underline;
+        }
+        .et-action-group { display: flex; align-items: center; gap: 5px; }
+        @keyframes et-shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          75% { transform: translateX(3px); }
+        }
+        .et-deleting { opacity: 0.4; pointer-events: none; transition: opacity 0.3s; }
+          gap: 4px;
+          transition: opacity 0.2s;
+        }
+        .et-edit-btn:hover { opacity: 0.85; }
+
+        /* Empty state */
+        .et-empty {
+          background: #fff;
+          border-radius: 14px;
+          padding: 32px 16px;
+          text-align: center;
+          color: #9ca3af;
+          font-size: 13px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .et-empty-icon { font-size: 32px; margin-bottom: 8px; }
+      `}</style>
+
+      <div className="et-root">
+        <div className="et-app">
+
+          {/* Header */}
+          <div className="et-header">
+            <div className="et-header-left">
+              <h1>💰 Expense Tracker</h1>
+              <p>Track your expenses from Notion</p>
             </div>
-            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{category}</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: '700' }}>₹{data.total.toFixed(2)}</div>
-            <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.count} expenses</div>
+            <button className="et-logout" onClick={logout}>🚪 Logout</button>
           </div>
-        ))}
-      </div>
-    </div>
-  );
 
+          {/* Controls */}
+          <div className="et-controls">
 
+            {/* Row 1: Month + Add button side by side */}
+            <div className="et-row">
+              <div className="et-month-wrap">
+                <span className="et-month-icon">📅</span>
+                <select
+                  className="et-month-select"
+                  value={`${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`}
+                  onChange={(e) => {
+                    const [y, m] = e.target.value.split('-');
+                    setSelectedYear(parseInt(y));
+                    setSelectedMonth(parseInt(m));
+                  }}
+                >
+                  {Array.from({ length: 10 }, (_, yi) => {
+                    const y = new Date().getFullYear() - 5 + yi;
+                    return Array.from({ length: 12 }, (_, mi) => {
+                      const m = mi + 1;
+                      return (
+                        <option key={`${y}-${m}`} value={`${y}-${m.toString().padStart(2, '0')}`}>
+                          {MONTH_NAMES[mi]} {y}
+                        </option>
+                      );
+                    });
+                  }).flat()}
+                </select>
+              </div>
+              <button className="et-add-btn" onClick={() => setShowAddTransaction(true)}>
+                ＋ Add
+              </button>
+            </div>
 
-
-  const renderMobileView = () => (
-    <div style={styles.mobileCardContainer}>
-      {rows.map((r, i) => (
-        <div
-          key={i}
-          className="mobile-card-enter"
-          style={{
-            ...styles.mobileCard,
-            transform: expandedCard === i ? 'scale(1.02) translateY(-4px)' : 'scale(1)',
-            boxShadow: expandedCard === i
-              ? '0 20px 60px rgba(0, 0, 0, 0.15)'
-              : '0 8px 32px rgba(0, 0, 0, 0.1)',
-            animationDelay: `${i * 0.1}s`
-          }}
-          onClick={() => setExpandedCard(expandedCard === i ? null : i)}
-        >
-          {/* Category Accent Bar with Glow */}
-          <div
-            className="category-accent-glow"
-            style={{
-              ...styles.categoryAccent,
-              background: `linear-gradient(90deg, ${getCategoryColor(r.category)}, ${getCategoryColor(r.category)}dd)`,
-              boxShadow: `0 0 20px ${getCategoryColor(r.category)}33`
-            }}
-          />
-
-          <div style={styles.mobileCardInner}>
-            {/* First Line - Expense Name Only */}
-            <div style={{
-              marginBottom: '1rem'
-            }}>
-              <div style={{
-                fontSize: '1.3rem',
-                fontWeight: '700',
-                color: '#2c3e50',
-                lineHeight: '1.3',
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}>
-                <span style={{
-                  fontSize: '1.4rem',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-                }}>
-                  {getCategoryIcon(r.category)}
-                </span>
-                {r.expense}
+            {/* Row 2: Search + Total side by side */}
+            <div className="et-row">
+              <div className="et-search">
+                <span className="et-search-icon">🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="et-total">
+                <div className="et-total-amount">₹{formatAmount(totalAmount)}</div>
+                <div className="et-total-label">{rows.length}/{originalData.length} expenses</div>
               </div>
             </div>
 
-
-
-
-            {/* Second Line - Amount and Date */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              {/* Amount */}
-              <div style={{
-                flex: 1
-              }}>
-                <div style={{
-                  fontSize: '1.4rem',
-                  fontWeight: '800',
-                  background: 'linear-gradient(135deg, #e74c3c, #c0392b)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  textShadow: '0 1px 2px rgba(231, 76, 60, 0.1)'
-                }}>
-                  ₹{formatAmount(r.amount)}
-                </div>
+            {/* Category filters */}
+            {categories.length > 1 && (
+              <div className="et-cats">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    className={`et-cat-btn${selectedCategory === cat ? ' active' : ''}`}
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat === 'All' ? '🗂' : getCategoryIcon(cat)} {cat}
+                  </button>
+                ))}
               </div>
+            )}
 
+            {/* Breakdown toggle */}
+            <button className="et-breakdown-btn" onClick={() => setShowBreakdown(!showBreakdown)}>
+              📊 {showBreakdown ? 'Hide' : 'Show'} Category Breakdown
+            </button>
 
-
-
-              {/* Date */}
-              <div style={{
-                background: `linear-gradient(135deg, ${getCategoryColor(r.category)}20, ${getCategoryColor(r.category)}10)`,
-                border: `1px solid ${getCategoryColor(r.category)}30`,
-                borderRadius: '12px',
-                padding: '6px 12px',
-                fontSize: '0.8rem',
-                fontWeight: '500',
-                color: '#495057',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                📅 {r.date}
-              </div>
-            </div>
-
-
-
-
-            {/* Expanded Information */}
-            {expandedCard === i && (
-              <div style={{
-                ...styles.expandedInfo,
-                animation: 'slideInUp 0.3s ease-out'
-              }}>
-                <div style={styles.expandedInfoOverlay} />
-
-                <div style={styles.expandedDetail}>
-                  <span style={styles.expandedLabel}>
-                    💳 Category
-                  </span>
-                  <span style={{
-                    ...styles.expandedValue,
-                    color: getCategoryColor(r.category),
-                    fontWeight: '700',
-                    textShadow: `0 1px 2px ${getCategoryColor(r.category)}30`
-                  }}>
-                    {r.category}
-                  </span>
-                </div>
-
-                <div style={styles.expandedDetail}>
-                  <span style={styles.expandedLabel}>
-                    💰 Amount
-                  </span>
-                  <span style={{
-                    ...styles.expandedValue,
-                    background: 'linear-gradient(135deg, #e74c3c, #c0392b)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontSize: '1.1rem',
-                    fontWeight: '700'
-                  }}>
-                    ₹{formatAmount(r.amount)}
-                  </span>
-                </div>
-
-                <div style={styles.expandedDetail}>
-                  <span style={styles.expandedLabel}>
-                    📅 Date
-                  </span>
-                  <span style={styles.expandedValue}>
-                    {r.date}
-                  </span>
-                </div>
-
-                <div style={styles.expandedDetail}>
-                  <span style={styles.expandedLabel}>
-                    🛍️ Description
-                  </span>
-                  <span style={styles.expandedValue}>
-                    {r.expense}
-                  </span>
-                </div>
-
-                <div style={{
-                  ...styles.expandedHint,
-                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  marginTop: '1rem'
-                }}>
-                  💡 Tap anywhere to collapse
+            {/* Category breakdown */}
+            {showBreakdown && (
+              <div className="et-breakdown">
+                <h3>💰 Spending by Category</h3>
+                <div className="et-breakdown-grid">
+                  {Object.entries(categoryBreakdown).map(([cat, data]) => (
+                    <div
+                      key={cat}
+                      className="et-breakdown-card"
+                      style={{ background: getCategoryColor(cat) }}
+                    >
+                      <div className="bc-icon">{getCategoryIcon(cat)}</div>
+                      <div className="bc-cat">{cat}</div>
+                      <div className="bc-amt">₹{data.total.toFixed(0)}</div>
+                      <div className="bc-count">{data.count} items</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
-        </div>
-      ))}
 
-      {/* Beautiful Total Card */}
-      <div style={{
-        ...styles.mobileTotalCard,
-        animation: 'slideInUp 0.6s ease-out'
-      }}>
-        <div style={styles.totalCardOverlay} />
-        <div style={{
-          ...styles.totalAmount,
-          background: 'linear-gradient(135deg, #ffffff, #f8f9fa)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
-          🎯 ₹{formatAmount(totalAmount)}
-        </div>
-        <div style={styles.totalLabel}>
-          Total Expenses
-        </div>
-        <div style={{
-          fontSize: '0.8rem',
-          opacity: 0.8,
-          marginTop: '0.5rem',
-          fontWeight: '400'
-        }}>
-          {rows.length} {rows.length === 1 ? 'expense' : 'expenses'}
+          {/* Transaction list */}
+          <div className="et-list">
+            <div className="et-section-label">Transactions</div>
+
+            {rows.length === 0 ? (
+              <div className="et-empty">
+                <div className="et-empty-icon">🪣</div>
+                No expenses found
+              </div>
+            ) : rows.map((r, i) => (
+              <div
+                key={i}
+                className={`et-tx${expandedCard === i ? ' expanded' : ''}${deletingIndex === i ? ' et-deleting' : ''}`}
+                style={{ borderLeftColor: getCategoryColor(r.category) }}
+                onClick={() => { setExpandedCard(expandedCard === i ? null : i); setDeleteConfirm(null); }}
+              >
+                {/* Collapsed row */}
+                <div className="et-tx-row">
+                  <div className="et-tx-icon" style={{ background: `${getCategoryColor(r.category)}18` }}>
+                    {getCategoryIcon(r.category)}
+                  </div>
+                  <div className="et-tx-info">
+                    <div className="et-tx-name">{r.expense}</div>
+                    <div className="et-tx-date">{r.date}</div>
+                  </div>
+                  <div className="et-tx-amount">₹{formatAmount(r.amount)}</div>
+                </div>
+
+                {/* Expanded details */}
+                {expandedCard === i && (
+                  <div className="et-expanded-inner">
+                    <div className="et-expanded-chip">
+                      <div className="et-expanded-label">Category</div>
+                      <div className="et-expanded-val" style={{ color: getCategoryColor(r.category) }}>{r.category}</div>
+                    </div>
+                    <div className="et-expanded-chip">
+                      <div className="et-expanded-label">Amount</div>
+                      <div className="et-expanded-val" style={{ color: '#ef4444', fontFamily: 'DM Mono, monospace' }}>₹{formatAmount(r.amount)}</div>
+                    </div>
+                    <div className="et-expanded-chip">
+                      <div className="et-expanded-label">Date</div>
+                      <div className="et-expanded-val">{r.date}</div>
+                    </div>
+                    <div className="et-expanded-chip">
+                      <div className="et-expanded-label">Description</div>
+                      <div className="et-expanded-val">{r.expense}</div>
+                    </div>
+                    <div className="et-expanded-footer">
+                      <span className="et-expanded-hint">Tap to collapse</span>
+                      <div className="et-action-group">
+                        {deleteConfirm === i ? (
+                          <>
+                            <button
+                              className="et-cancel-delete-btn"
+                              onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              className="et-delete-confirm-btn"
+                              onClick={(e) => handleDelete(e, r, i)}
+                            >
+                              🗑 Sure?
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="et-delete-btn"
+                            onClick={(e) => handleDelete(e, r, i)}
+                          >
+                            🗑 Delete
+                          </button>
+                        )}
+                        <button
+                          className="et-edit-btn"
+                          onClick={(e) => { e.stopPropagation(); setEditingTransaction(r); setExpandedCard(null); }}
+                        >
+                          ✏️ Edit
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
-    </div>
-  );
 
-
-
-
-  // Add loading check at the beginning of the render function
-  if (isLoading) {
-    return (
-      <Loader
-        message="Loading Your Expenses"
-        subMessage="Fetching data from Notion database"
-        size="large"
-      />
-    );
-  }
-
-
-
-
-  return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h1 style={styles.title}>💰 Expense Tracker</h1>
-              <p style={styles.subtitle}>Track your expenses from Notion</p>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button
-                onClick={logout}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.transform = 'translateY(0)';
-                }}
-              >
-                🚪 Logout
-              </button>
-            </div>
-          </div>
-        </div>
-
-
-
-
-        {/* Controls Section */}
-        <div style={styles.controlsSection}>
-          {/* Month and Year Selector */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '12px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
-              padding: '12px 20px',
-              borderRadius: '25px',
-              border: '2px solid rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              }}>
-              {/* Animated background gradient */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
-                opacity: 0.6,
-                zIndex: 0
-              }} />
-
-              <span style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                zIndex: 1,
-                position: 'relative'
-              }}>📅</span>
-
-              <select
-                value={`${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`}
-                onChange={(e) => {
-                  const [year, month] = e.target.value.split('-');
-                  setSelectedYear(parseInt(year));
-                  setSelectedMonth(parseInt(month));
-                }}
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.9))',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#2c3e50',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  minWidth: '160px',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                  transition: 'all 0.3s ease',
-                  zIndex: 1,
-                  position: 'relative',
-                  backdropFilter: 'blur(5px)'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(102, 126, 234, 0.5)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.2)';
-                  e.target.style.transform = 'scale(1.02)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
-                  e.target.style.transform = 'scale(1)';
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = 'rgba(102, 126, 234, 0.4)';
-                  e.target.style.transform = 'scale(1.01)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.transform = 'scale(1)';
-                }}
-              >
-                {Array.from({ length: 10 }, (_, yearIndex) => {
-                  const year = new Date().getFullYear() - 5 + yearIndex;
-                  return Array.from({ length: 12 }, (_, monthIndex) => {
-                    const month = monthIndex + 1;
-                    const monthNames = [
-                      'January', 'February', 'March', 'April', 'May', 'June',
-                      'July', 'August', 'September', 'October', 'November', 'December'
-                    ];
-                    return (
-                      <option key={`${year}-${month}`} value={`${year}-${month.toString().padStart(2, '0')}`}>
-                        {monthNames[monthIndex]} {year}
-                      </option>
-                    );
-                  });
-                }).flat()}
-              </select>
-            </div>
-          </div>
-
-
-          {/* Add Transaction Button */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '12px'
-          }}>
-            <button
-              onClick={() => setShowAddTransaction(true)}
-              style={{
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                border: 'none',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '25px',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: '600',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
-                backdropFilter: 'blur(10px)'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
-                e.target.style.background = 'linear-gradient(135deg, #5a6fd8, #6a4190)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.3)';
-                e.target.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-              }}
-            >
-              ➕ Add New Transaction
-            </button>
-          </div>
-
-
-          {/* Search and Total */}
-          <div style={styles.searchAndTotal}>
-            <div style={styles.searchContainer}>
-              <input
-                type="text"
-                placeholder="🔍 Search expenses..."
-                style={styles.searchInput}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#667eea';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e9ecef';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              <span style={styles.searchIcon}>🔍</span>
-            </div>
-
-
-
-
-            <div style={styles.totalCard}>
-              <p style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.1rem', fontWeight: '600' }}>
-                Total: ₹{formatAmount(totalAmount)}
-              </p>
-              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', opacity: 0.9 }}>
-                {rows.length} of {originalData.length} expenses
-              </p>
-            </div>
-          </div>
-
-
-
-
-          {/* Category Filters - Only show if there are actual categories beyond 'All' */}
-          {categories.length > 1 && (
-            <div style={styles.categoryFilters}>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  style={{
-                    ...styles.categoryButton,
-                    background: selectedCategory === category
-                      ? getCategoryColor(category)
-                      : '#fff',
-                    color: selectedCategory === category ? '#fff' : '#6c757d',
-                    border: selectedCategory === category
-                      ? 'none'
-                      : '2px solid #e9ecef'
-                  }}
-                  onClick={() => setSelectedCategory(category)}
-                  onMouseEnter={(e) => {
-                    if (selectedCategory !== category) {
-                      e.target.style.background = '#f8f9fa';
-                      e.target.style.transform = 'translateY(-2px)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedCategory !== category) {
-                      e.target.style.background = '#fff';
-                      e.target.style.transform = 'translateY(0)';
-                    }
-                  }}
-                >
-                  {category === 'All' ? '📋' : getCategoryIcon(category)} {category}
-                </button>
-              ))}
-            </div>
-          )}
-
-
-
-
-          {/* Breakdown Toggle */}
-          <button
-            style={styles.breakdownToggle}
-            onClick={() => setShowBreakdown(!showBreakdown)}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 20px rgba(111, 66, 193, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            📊 {showBreakdown ? 'Hide' : 'Show'} Category Breakdown
-          </button>
-
-
-
-
-          {/* Category Breakdown */}
-          {showBreakdown && renderCategoryBreakdown()}
-        </div>
-
-
-
-
-        {/* Content - Mobile Cards or Desktop Table */}
-        {renderMobileView()}
-      </div>
-
-
-
-
-      {/* Add Transaction Modal */}
       {showAddTransaction && (
         <AddTransaction
           onClose={() => setShowAddTransaction(false)}
-          onTransactionAdded={refreshData}
+          onTransactionAdded={() => { }}
         />
       )}
-    </div>
+
+      {editingTransaction && (
+        <EditTransaction
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onTransactionUpdated={(updated) => {
+            setOriginalData(prev =>
+              prev.map(r => r.id === updated.id ? { ...r, ...updated } : r)
+            );
+            setEditingTransaction(null);
+          }}
+        />
+      )}
+    </>
   );
 };
 
-
-
-
 export default ExpenseTable;
-
-
-
-
-
-
-
-
-
