@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getCategoryIcon } from '../utils/categoryUtils.js';
+import { getAuthData, apiPost } from '../utils/api.js';
 
 const AddTransaction = ({ onClose, onTransactionAdded }) => {
   const [formData, setFormData] = useState({
@@ -53,24 +54,16 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
     }
 
     try {
-      const apiPath = process.env.REACT_APP_API_PATH;
-      const authData = localStorage.getItem('expense_tracker_auth');
-      let userData = null;
-      if (authData) { try { userData = JSON.parse(authData); } catch (e) { } }
-
-      const response = await fetch(`${apiPath}/api/transaction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' },
-        body: JSON.stringify({
-          userName: userData?.userName || '',
-          uuid: userData?.uuid || '',
-          isMe: userData?.isMe || false,
-          expense: formData.expense.trim(),
-          amount,
-          date: formData.date,
-          category: formData.category === 'Other (custom)' ? (formData.customCategory?.trim() || 'Other') : formData.category,
-          paymentMethod: formData.paymentMethod === 'Other (custom)' ? (formData.customPayment?.trim() || 'Other') : formData.paymentMethod
-        })
+      const userData = getAuthData();
+      const response = await apiPost('/api/transaction', {
+        userName: userData?.userName || '',
+        uuid: userData?.uuid || '',
+        isMe: userData?.isMe || false,
+        expense: formData.expense.trim(),
+        amount,
+        date: formData.date,
+        category: formData.category === 'Other (custom)' ? (formData.customCategory?.trim() || 'Other') : formData.category,
+        paymentMethod: formData.paymentMethod === 'Other (custom)' ? (formData.customPayment?.trim() || 'Other') : formData.paymentMethod,
       });
 
       const result = await response.json();
