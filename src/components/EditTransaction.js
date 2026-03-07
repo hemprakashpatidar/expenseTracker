@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getCategoryIcon } from '../utils/categoryUtils.js';
+import { getAuthData, apiPost } from '../utils/api.js';
 
 // Convert display date (DD-MM-YY or DD-MM-YYYY) back to YYYY-MM-DD for <input type="date">
 const toInputDate = (dateStr) => {
@@ -81,24 +82,16 @@ const EditTransaction = ({ transaction, onClose, onTransactionUpdated }) => {
             : formData.paymentMethod;
 
         try {
-            const apiPath = process.env.REACT_APP_API_PATH;
-            const authData = localStorage.getItem('expense_tracker_auth');
-            let userData = null;
-            if (authData) { try { userData = JSON.parse(authData); } catch (err) { } }
-
-            const response = await fetch(`${apiPath}/api/edit-transaction`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' },
-                body: JSON.stringify({
-                    pageId: transaction.id,
-                    userName: userData?.userName || '',
-                    uuid: userData?.uuid || '',
-                    expense: formData.expense.trim(),
-                    amount,
-                    date: formData.date,
-                    category: resolvedCategory,
-                    paymentMethod: resolvedPayment,
-                })
+            const userData = getAuthData();
+            const response = await apiPost('/api/edit-transaction', {
+                pageId: transaction.id,
+                userName: userData?.userName || '',
+                uuid: userData?.uuid || '',
+                expense: formData.expense.trim(),
+                amount,
+                date: formData.date,
+                category: resolvedCategory,
+                paymentMethod: resolvedPayment,
             });
 
             const result = await response.json();

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from './contexts/AuthContext.js';
 import Loader from './components/Loader.js';
 import AddTransaction from './components/AddTransaction.js';
@@ -8,6 +8,10 @@ import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
 import { formatAmount } from './utils/formatters.js';
 import { sortData } from './utils/dataUtils.js';
+import { getAuthData, apiPost } from './utils/api.js';
+import { getRecurringTemplates, addRecurringTemplate, removeRecurringTemplate, markHandled, getPendingSuggestions } from './utils/recurringUtils.js';
+import RecurringSuggestions from './components/RecurringSuggestions.js';
+import ManageRecurring from './components/ManageRecurring.js';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -29,32 +33,104 @@ const ExpenseTable = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deletingIndex, setDeletingIndex] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const sortBy = 'date';
-  const sortDirection = 'desc';
+  const [sortBy, setSortBy] = useState('date');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('All');
+  const [swipedCard, setSwipedCard] = useState(null);
+  const touchRef = useRef({ startX: 0, startY: 0, wasSwiped: false });
+  const [showFilters, setShowFilters] = useState(false);
+  const [showManageRecurring, setShowManageRecurring] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
+  const [recurringTemplates, setRecurringTemplates] = useState(() => getRecurringTemplates());
+  const [addingRecurringId, setAddingRecurringId] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const performDelete = async (row, index) => {
+    setSwipedCard(null);
+    setDeletingIndex(index);
+    try {
+      const userData = getAuthData();
+      await apiPost('/api/delete-transaction', {
+        pageId: row.id,
+        userName: userData?.userName || '',
+        uuid: userData?.uuid || '',
+      });
+      setOriginalData(prev => prev.filter((_, i) => i !== index));
+      setExpandedCard(null);
+    } catch (err) {
+      console.error('Delete failed', err);
+      setDeleteError(true);
+      setTimeout(() => setDeleteError(false), 3000);
+    }
+    finally { setDeletingIndex(null); }
+  };
 
   const handleDelete = async (e, row, index) => {
     e.stopPropagation();
     if (deleteConfirm !== index) { setDeleteConfirm(index); return; }
-    setDeletingIndex(index);
     setDeleteConfirm(null);
-    try {
-      const apiPath = process.env.REACT_APP_API_PATH;
-      const authData = localStorage.getItem('expense_tracker_auth');
-      let userData = null;
-      if (authData) { try { userData = JSON.parse(authData); } catch (err) { } }
-      await fetch(`${apiPath}/api/delete-transaction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' },
-        body: JSON.stringify({
-          pageId: row.id,
-          userName: userData?.userName || '',
-          uuid: userData?.uuid || ''
-        })
-      });
-      setOriginalData(prev => prev.filter((_, i) => i !== index));
+    await performDelete(row, index);
+  };
+
+  const handleTouchStart = (e, index) => {
+    touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, wasSwiped: false };
+  };
+
+  const handleTouchEnd = (e, index) => {
+    const dx = e.changedTouches[0].clientX - touchRef.current.startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchRef.current.startY);
+    if (dy > 30) return; // vertical scroll, ignore
+    if (dx < -60) {
+      touchRef.current.wasSwiped = true;
+      setSwipedCard(index);
       setExpandedCard(null);
-    } catch (err) { console.error('Delete failed', err); }
-    finally { setDeletingIndex(null); }
+      setDeleteConfirm(null);
+    } else if (dx > 20 && swipedCard === index) {
+      touchRef.current.wasSwiped = true;
+      setSwipedCard(null);
+    }
+  };
+
+  const handleToggleRecurring = (transaction) => {
+    const existing = recurringTemplates.find(t => t.sourceId === transaction.id);
+    if (existing) {
+      setRecurringTemplates(removeRecurringTemplate(existing.id));
+    } else {
+      setRecurringTemplates(addRecurringTemplate(transaction));
+    }
+  };
+
+  const handleConfirmSuggestion = async (suggestion) => {
+    setAddingRecurringId(suggestion.id);
+    try {
+      const userData = getAuthData();
+      const now = new Date();
+      const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === (now.getMonth() + 1);
+      const day = isCurrentMonth ? now.getDate() : 1;
+      const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const response = await apiPost('/api/transaction', {
+        userName: userData?.userName || '',
+        uuid: userData?.uuid || '',
+        isMe: userData?.isMe || false,
+        expense: suggestion.expense,
+        amount: suggestion.amount,
+        date: dateStr,
+        category: suggestion.category,
+        paymentMethod: suggestion.paymentMethod,
+      });
+      if (response.ok) {
+        setRecurringTemplates(markHandled(suggestion.id, selectedYear, selectedMonth));
+        setRefreshKey(k => k + 1);
+      }
+    } catch (err) {
+      console.error('Failed to add recurring transaction', err);
+    } finally {
+      setAddingRecurringId(null);
+    }
+  };
+
+  const handleSkipSuggestion = (templateId) => {
+    setRecurringTemplates(markHandled(templateId, selectedYear, selectedMonth));
   };
 
   useEffect(() => { addAnimationStyles(); }, []);
@@ -62,19 +138,14 @@ const ExpenseTable = () => {
   useEffect(() => {
     if (showAddTransaction) return;
     setIsLoading(true);
-    const apiPath = process.env.REACT_APP_API_PATH;
-    const authData = localStorage.getItem('expense_tracker_auth');
-    let userData = null;
-    if (authData) {
-      try { userData = JSON.parse(authData); } catch (e) { console.error(e); }
-    }
+    const userData = getAuthData();
     const base = { userName: userData?.userName || '', uuid: userData?.uuid || '', isMe: userData?.isMe || false, month: selectedMonth, year: selectedYear };
     const apiCalls = [
-      fetch(`${apiPath}/api/notion`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' }, body: JSON.stringify({ ...base, type: 'default' }) }).then(r => r.json())
+      apiPost('/api/notion', { ...base, type: 'default' }).then(r => r.json()),
     ];
     if (userData?.isMe) {
       apiCalls.push(
-        fetch(`${apiPath}/api/notion`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer authenticated' }, body: JSON.stringify({ ...base, type: 'cc' }) }).then(r => r.json()).catch(() => ({ results: [] }))
+        apiPost('/api/notion', { ...base, type: 'cc' }).then(r => r.json()).catch(() => ({ results: [] }))
       );
     }
     const parse = (results) => results.map(row => ({
@@ -89,18 +160,23 @@ const ExpenseTable = () => {
       const combined = [...parse(results[0].results), ...(results[1] ? parse(results[1].results) : [])];
       setOriginalData(combined);
       setRows(sortData([...combined], sortBy, sortDirection));
+      setSelectedCategory('All');
+      setSelectedPaymentMethod('All');
       setIsLoading(false);
     }).catch(() => { setOriginalData([]); setRows([]); setIsLoading(false); });
-  }, [showAddTransaction, selectedMonth, selectedYear]);
+  }, [showAddTransaction, selectedMonth, selectedYear, refreshKey]);
 
   useEffect(() => {
     let filtered = originalData;
     if (selectedCategory !== 'All') filtered = filtered.filter(r => r.category === selectedCategory);
+    if (selectedPaymentMethod !== 'All') filtered = filtered.filter(r => r.paymentMethod === selectedPaymentMethod);
     if (searchTerm) filtered = filtered.filter(r => r.expense.toLowerCase().includes(searchTerm.toLowerCase()));
     setRows(sortData([...filtered], sortBy, sortDirection));
-  }, [selectedCategory, searchTerm, sortBy, sortDirection, originalData]);
+  }, [selectedCategory, selectedPaymentMethod, searchTerm, sortBy, sortDirection, originalData]);
 
   const categories = ['All', ...new Set(originalData.map(r => r.category))];
+  const paymentMethods = ['All', ...new Set(originalData.map(r => r.paymentMethod))];
+  const pendingSuggestions = getPendingSuggestions(recurringTemplates, selectedYear, selectedMonth);
   const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
   const categoryBreakdown = originalData.reduce((acc, r) => {
     if (!acc[r.category]) acc[r.category] = { total: 0, count: 0 };
@@ -312,21 +388,175 @@ const ExpenseTable = () => {
           color: #4f46e5;
         }
 
+        /* Filter row */
+        .et-filter-row {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .et-filter-row::-webkit-scrollbar { display: none; }
+        .et-filter-toggle {
+          background: #fff;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 20px;
+          padding: 5px 12px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #6b7280;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          transition: all 0.15s;
+        }
+        .et-filter-toggle.has-filters {
+          border-color: #4f46e5;
+          color: #4f46e5;
+          background: #ede9ff;
+        }
+        .et-active-chip {
+          background: #ede9ff;
+          border: 1.5px solid #c4b5fd;
+          border-radius: 20px;
+          padding: 4px 10px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #4f46e5;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: all 0.15s;
+        }
+        .et-active-chip:hover { background: #ddd6fe; }
+        .et-chip-x { font-size: 13px; opacity: 0.6; line-height: 1; }
+
+        /* Filter panel */
+        .et-filter-panel {
+          background: #fff;
+          border-radius: 14px;
+          padding: 12px 14px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .et-filter-section { display: flex; flex-direction: column; gap: 6px; }
+        .et-filter-section-label {
+          font-size: 10px;
+          font-weight: 700;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        /* Sort controls */
+        .et-sort-row {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+        }
+        .et-sort-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .et-sort-btn {
+          background: #fff;
+          border: 1.5px solid transparent;
+          border-radius: 20px;
+          padding: 5px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6b7280;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: all 0.15s;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .et-sort-btn.active {
+          background: #ede9ff;
+          border-color: #4f46e5;
+          color: #4f46e5;
+        }
+        .et-dir-btn {
+          background: #fff;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 20px;
+          padding: 5px 10px;
+          font-size: 13px;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          color: #4f46e5;
+          font-weight: 700;
+          transition: all 0.15s;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          flex-shrink: 0;
+          margin-left: auto;
+        }
+        .et-dir-btn:hover { background: #ede9ff; border-color: #4f46e5; }
+
         /* Breakdown toggle */
         .et-breakdown-btn {
-          background: linear-gradient(135deg, #7c3aed, #be185d);
-          color: white;
-          border: none;
+          background: #fff;
+          color: #6b7280;
+          border: 1.5px solid #e5e7eb;
           border-radius: 12px;
-          padding: 9px 14px;
+          padding: 8px 14px;
           font-family: 'DM Sans', sans-serif;
           font-size: 12px;
           font-weight: 700;
           cursor: pointer;
-          width: fit-content;
-          transition: opacity 0.2s;
+          width: 100%;
+          text-align: left;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          transition: all 0.15s;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
         }
-        .et-breakdown-btn:hover { opacity: 0.88; }
+        .et-breakdown-btn:hover { border-color: #c4b5fd; color: #4f46e5; }
+        .et-breakdown-btn.open { border-color: #c4b5fd; color: #4f46e5; background: #ede9ff; }
+
+        /* Delete error toast */
+        .et-toast {
+          position: fixed;
+          bottom: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #1a1a2e;
+          color: white;
+          padding: 10px 18px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+          animation: et-toast-in 0.2s ease;
+          white-space: nowrap;
+        }
+        @keyframes et-toast-in {
+          from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
 
         /* Breakdown grid */
         .et-breakdown {
@@ -532,6 +762,27 @@ const ExpenseTable = () => {
         }
         .et-edit-btn:hover { opacity: 0.85; }
 
+        /* Swipe delete */
+        .et-swipe-delete {
+          position: absolute;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 82px;
+          background: #ef4444;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 12px;
+          font-weight: 700;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          border-radius: 14px;
+          gap: 4px;
+        }
+        .et-swipe-delete:active { background: #dc2626; }
+
         /* Empty state */
         .et-empty {
           background: #fff;
@@ -608,24 +859,71 @@ const ExpenseTable = () => {
               </div>
             </div>
 
-            {/* Category filters */}
-            {categories.length > 1 && (
-              <div className="et-cats">
-                {categories.map(cat => (
+            {/* Filter row: toggle button + active chips */}
+            {(() => {
+              const activeCount = (selectedCategory !== 'All' ? 1 : 0) + (selectedPaymentMethod !== 'All' ? 1 : 0);
+              return (
+                <div className="et-filter-row">
                   <button
-                    key={cat}
-                    className={`et-cat-btn${selectedCategory === cat ? ' active' : ''}`}
-                    onClick={() => setSelectedCategory(cat)}
+                    className={`et-filter-toggle${activeCount > 0 ? ' has-filters' : ''}`}
+                    onClick={() => setShowFilters(f => !f)}
                   >
-                    {cat === 'All' ? '🗂' : getCategoryIcon(cat)} {cat}
+                    ⚙ Filters{activeCount > 0 ? ` · ${activeCount}` : ''}
                   </button>
-                ))}
+                  {selectedCategory !== 'All' && (
+                    <button className="et-active-chip" onClick={() => setSelectedCategory('All')}>
+                      {getCategoryIcon(selectedCategory)} {selectedCategory} <span className="et-chip-x">×</span>
+                    </button>
+                  )}
+                  {selectedPaymentMethod !== 'All' && (
+                    <button className="et-active-chip" onClick={() => setSelectedPaymentMethod('All')}>
+                      💳 {selectedPaymentMethod} <span className="et-chip-x">×</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Collapsible filter panel */}
+            {showFilters && (
+              <div className="et-filter-panel">
+                <div className="et-filter-section">
+                  <div className="et-filter-section-label">Category</div>
+                  <div className="et-cats">
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        className={`et-cat-btn${selectedCategory === cat ? ' active' : ''}`}
+                        onClick={() => { setSelectedCategory(cat); setShowFilters(false); }}
+                      >
+                        {cat === 'All' ? '🗂' : getCategoryIcon(cat)} {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {paymentMethods.length > 1 && (
+                  <div className="et-filter-section">
+                    <div className="et-filter-section-label">Payment Method</div>
+                    <div className="et-cats">
+                      {paymentMethods.map(pm => (
+                        <button
+                          key={pm}
+                          className={`et-cat-btn${selectedPaymentMethod === pm ? ' active' : ''}`}
+                          onClick={() => { setSelectedPaymentMethod(pm); setShowFilters(false); }}
+                        >
+                          {pm === 'All' ? '💳' : pm}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Breakdown toggle */}
-            <button className="et-breakdown-btn" onClick={() => setShowBreakdown(!showBreakdown)}>
-              📊 {showBreakdown ? 'Hide' : 'Show'} Category Breakdown
+            <button className={`et-breakdown-btn${showBreakdown ? ' open' : ''}`} onClick={() => setShowBreakdown(!showBreakdown)}>
+              <span>📊 Category Breakdown</span>
+              <span style={{ fontSize: '11px' }}>{showBreakdown ? '▲' : '▼'}</span>
             </button>
 
             {/* Category breakdown */}
@@ -650,21 +948,91 @@ const ExpenseTable = () => {
             )}
           </div>
 
+          {/* Recurring suggestions */}
+          <RecurringSuggestions
+            suggestions={pendingSuggestions}
+            onConfirm={handleConfirmSuggestion}
+            onSkip={handleSkipSuggestion}
+            addingId={addingRecurringId}
+            allTemplatesCount={recurringTemplates.length}
+            onManage={() => setShowManageRecurring(true)}
+          />
+
           {/* Transaction list */}
           <div className="et-list">
-            <div className="et-section-label">Transactions</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px' }}>
+              <div className="et-section-label">Transactions</div>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                {[{ key: 'date', label: '📅 Date' }, { key: 'amount', label: '₹ Amount' }].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (sortBy === key) setSortDirection(d => d === 'desc' ? 'asc' : 'desc');
+                      else { setSortBy(key); setSortDirection('desc'); }
+                    }}
+                    style={{
+                      background: sortBy === key ? '#ede9ff' : 'transparent',
+                      border: sortBy === key ? '1.5px solid #c4b5fd' : '1.5px solid transparent',
+                      borderRadius: '12px',
+                      padding: '3px 9px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: sortBy === key ? '#4f46e5' : '#9ca3af',
+                      fontFamily: "'DM Sans', sans-serif",
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {label} {sortBy === key ? (sortDirection === 'desc' ? '↓' : '↑') : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {rows.length === 0 ? (
               <div className="et-empty">
-                <div className="et-empty-icon">🪣</div>
-                No expenses found
+                {originalData.length === 0 ? (
+                  <>
+                    <div className="et-empty-icon">📭</div>
+                    <div>No expenses in {MONTH_NAMES[selectedMonth - 1]}</div>
+                    <div style={{ fontSize: '11px', marginTop: '5px', color: '#c0c4d0' }}>Tap + Add to record your first one</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="et-empty-icon">🔍</div>
+                    <div>No results match your filters</div>
+                    <button
+                      onClick={() => { setSelectedCategory('All'); setSelectedPaymentMethod('All'); }}
+                      style={{ marginTop: '8px', background: 'none', border: 'none', color: '#4f46e5', fontSize: '12px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Clear filters
+                    </button>
+                  </>
+                )}
               </div>
             ) : rows.map((r, i) => (
+              <div key={i} style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden' }}>
+                <div
+                  className="et-swipe-delete"
+                  onClick={(e) => { e.stopPropagation(); performDelete(r, i); }}
+                >
+                  🗑 Delete
+                </div>
               <div
-                key={i}
                 className={`et-tx${expandedCard === i ? ' expanded' : ''}${deletingIndex === i ? ' et-deleting' : ''}`}
-                style={{ borderLeftColor: getCategoryColor(r.category) }}
-                onClick={() => { setExpandedCard(expandedCard === i ? null : i); setDeleteConfirm(null); }}
+                style={{
+                  borderLeftColor: getCategoryColor(r.category),
+                  transform: `translateX(${swipedCard === i ? -82 : 0}px)`,
+                  transition: 'transform 0.25s ease',
+                }}
+                onTouchStart={(e) => handleTouchStart(e, i)}
+                onTouchEnd={(e) => handleTouchEnd(e, i)}
+                onClick={() => {
+                  if (touchRef.current.wasSwiped) { touchRef.current.wasSwiped = false; return; }
+                  if (swipedCard === i) { setSwipedCard(null); return; }
+                  if (swipedCard !== null) { setSwipedCard(null); return; }
+                  setExpandedCard(expandedCard === i ? null : i);
+                  setDeleteConfirm(null);
+                }}
               >
                 {/* Collapsed row */}
                 <div className="et-tx-row">
@@ -697,6 +1065,25 @@ const ExpenseTable = () => {
                       <div className="et-expanded-label">Description</div>
                       <div className="et-expanded-val">{r.expense}</div>
                     </div>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleRecurring(r); }}
+                        style={{
+                          width: '100%',
+                          background: recurringTemplates.some(t => t.sourceId === r.id) ? '#ede9ff' : '#f3f4f6',
+                          color: recurringTemplates.some(t => t.sourceId === r.id) ? '#4f46e5' : '#6b7280',
+                          border: recurringTemplates.some(t => t.sourceId === r.id) ? '1.5px solid #c4b5fd' : '1.5px solid transparent',
+                          borderRadius: '9px', padding: '7px 10px',
+                          fontSize: '12px', fontWeight: 700,
+                          fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        🔄 {recurringTemplates.some(t => t.sourceId === r.id) ? 'Remove from recurring' : 'Set as recurring'}
+                      </button>
+                    </div>
+
                     <div className="et-expanded-footer">
                       <span className="et-expanded-hint">Tap to collapse</span>
                       <div className="et-action-group">
@@ -734,6 +1121,7 @@ const ExpenseTable = () => {
                   </div>
                 )}
               </div>
+              </div>
             ))}
           </div>
 
@@ -758,6 +1146,20 @@ const ExpenseTable = () => {
             setEditingTransaction(null);
           }}
         />
+      )}
+
+      {showManageRecurring && (
+        <ManageRecurring
+          templates={recurringTemplates}
+          onClose={() => setShowManageRecurring(false)}
+          onTemplatesChange={setRecurringTemplates}
+        />
+      )}
+
+      {deleteError && (
+        <div className="et-toast">
+          ⚠️ Couldn't delete — please try again
+        </div>
       )}
     </>
   );
