@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from './contexts/AuthContext.js';
-import Loader from './components/Loader.js';
 import AddTransaction from './components/AddTransaction.js';
 import EditTransaction from './components/EditTransaction.js';
 import { addAnimationStyles } from './utils/animations.js';
@@ -20,6 +19,7 @@ const MONTH_NAMES = [
 
 const ExpenseTable = () => {
   const { logout } = useAuth();
+  const currentUser = getAuthData();
   const [rows, setRows] = useState([]);
   const [originalData, setOriginalData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -136,7 +136,7 @@ const ExpenseTable = () => {
   useEffect(() => { addAnimationStyles(); }, []);
 
   useEffect(() => {
-    if (showAddTransaction) return;
+
     setIsLoading(true);
     const userData = getAuthData();
     const base = { userName: userData?.userName || '', uuid: userData?.uuid || '', isMe: userData?.isMe || false, month: selectedMonth, year: selectedYear };
@@ -163,7 +163,7 @@ const ExpenseTable = () => {
       setSelectedPaymentMethod('All');
       setIsLoading(false);
     }).catch(() => { setOriginalData([]); setRows([]); setIsLoading(false); });
-  }, [showAddTransaction, selectedMonth, selectedYear, refreshKey]);
+  }, [selectedMonth, selectedYear, refreshKey]);
 
   useEffect(() => {
     let filtered = originalData;
@@ -184,7 +184,6 @@ const ExpenseTable = () => {
     return acc;
   }, {});
 
-  if (isLoading) return <Loader message="Loading Your Expenses" subMessage="Fetching data from Notion database" size="large" />;
 
   return (
     <>
@@ -232,6 +231,27 @@ const ExpenseTable = () => {
           font-size: 11px;
           color: rgba(255,255,255,0.5);
           margin-top: 1px;
+        }
+        .et-header-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .et-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.2);
+          border: 2px solid rgba(255,255,255,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 700;
+          color: white;
+          flex-shrink: 0;
+          letter-spacing: 0;
         }
         .et-logout {
           background: rgba(255,255,255,0.12);
@@ -782,6 +802,30 @@ const ExpenseTable = () => {
         }
         .et-swipe-delete:active { background: #dc2626; }
 
+        /* Skeleton */
+        @keyframes et-shimmer {
+          0%   { background-position: -200% 0; }
+          100% { background-position:  200% 0; }
+        }
+        .et-skeleton-card {
+          background: #fff;
+          border-radius: 14px;
+          padding: 11px 14px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+          display: flex;
+          align-items: center;
+          gap: 11px;
+        }
+        .et-sk {
+          background: linear-gradient(90deg, #f0f1f5 25%, #e4e6ed 50%, #f0f1f5 75%);
+          background-size: 200% 100%;
+          animation: et-shimmer 1.4s ease-in-out infinite;
+          border-radius: 6px;
+          flex-shrink: 0;
+        }
+        .et-sk-circle { border-radius: 9px; width: 34px; height: 34px; }
+        .et-sk-info { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
         /* Empty state */
         .et-empty {
           background: #fff;
@@ -802,9 +846,14 @@ const ExpenseTable = () => {
           <div className="et-header">
             <div className="et-header-left">
               <h1>💰 Expense Tracker</h1>
-              <p>Track your expenses from Notion</p>
+              <p>Hi, {currentUser?.userName || 'there'} 👋</p>
             </div>
-            <button className="et-logout" onClick={logout}>🚪 Logout</button>
+            <div className="et-header-right">
+              <div className="et-avatar">
+                {(currentUser?.userName?.[0] || '?').toUpperCase()}
+              </div>
+              <button className="et-logout" onClick={logout}>Logout</button>
+            </div>
           </div>
 
           {/* Controls */}
@@ -853,8 +902,17 @@ const ExpenseTable = () => {
                 />
               </div>
               <div className="et-total">
-                <div className="et-total-amount">₹{formatAmount(totalAmount)}</div>
-                <div className="et-total-label">{rows.length}/{originalData.length} expenses</div>
+                {isLoading ? (
+                  <>
+                    <div className="et-sk" style={{ height: '15px', width: '80px', borderRadius: '6px', marginBottom: '4px' }} />
+                    <div className="et-sk" style={{ height: '10px', width: '55px', borderRadius: '4px', opacity: 0.6 }} />
+                  </>
+                ) : (
+                  <>
+                    <div className="et-total-amount">₹{formatAmount(totalAmount)}</div>
+                    <div className="et-total-label">{rows.length}/{originalData.length} expenses</div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -987,7 +1045,18 @@ const ExpenseTable = () => {
               </div>
             </div>
 
-            {rows.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="et-skeleton-card">
+                  <div className="et-sk et-sk-circle" />
+                  <div className="et-sk-info">
+                    <div className="et-sk" style={{ height: '13px', width: `${55 + (i % 3) * 15}%` }} />
+                    <div className="et-sk" style={{ height: '11px', width: '35%' }} />
+                  </div>
+                  <div className="et-sk" style={{ height: '14px', width: '52px' }} />
+                </div>
+              ))
+            ) : rows.length === 0 ? (
               <div className="et-empty">
                 {originalData.length === 0 ? (
                   <>
@@ -1130,7 +1199,7 @@ const ExpenseTable = () => {
       {showAddTransaction && (
         <AddTransaction
           onClose={() => setShowAddTransaction(false)}
-          onTransactionAdded={() => { }}
+          onTransactionAdded={() => { setShowAddTransaction(false); setRefreshKey(k => k + 1); }}
         />
       )}
 
