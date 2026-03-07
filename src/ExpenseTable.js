@@ -159,7 +159,6 @@ const ExpenseTable = () => {
     Promise.all(apiCalls).then(results => {
       const combined = [...parse(results[0].results), ...(results[1] ? parse(results[1].results) : [])];
       setOriginalData(combined);
-      setRows(sortData([...combined], sortBy, sortDirection));
       setSelectedCategory('All');
       setSelectedPaymentMethod('All');
       setIsLoading(false);
