@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from './contexts/AuthContext.js';
 import AddTransaction from './components/AddTransaction.js';
 import EditTransaction from './components/EditTransaction.js';
+import ImportTransactions from './components/ImportTransactions.js';
 import { addAnimationStyles } from './utils/animations.js';
 import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
@@ -40,6 +41,7 @@ const ExpenseTable = () => {
   const touchRef = useRef({ startX: 0, startY: 0, wasSwiped: false });
   const [showFilters, setShowFilters] = useState(false);
   const [showManageRecurring, setShowManageRecurring] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
   const [recurringTemplates, setRecurringTemplates] = useState(() => getRecurringTemplates());
   const [addingRecurringId, setAddingRecurringId] = useState(null);
@@ -308,7 +310,8 @@ const ExpenseTable = () => {
           min-width: 0;
         }
 
-        /* Add button */
+        /* Add / Import buttons */
+        .et-btn-group { display: flex; gap: 6px; flex-shrink: 0; }
         .et-add-btn {
           background: #4f46e5;
           color: white;
@@ -324,6 +327,21 @@ const ExpenseTable = () => {
           transition: opacity 0.2s, transform 0.15s;
         }
         .et-add-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .et-import-btn {
+          background: #fff;
+          color: #4f46e5;
+          border: 1.5px solid #c4b5fd;
+          border-radius: 12px;
+          padding: 9px 12px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
+          transition: all 0.2s;
+        }
+        .et-import-btn:hover { background: #ede9ff; transform: translateY(-1px); }
 
         /* Search */
         .et-search {
@@ -885,9 +903,14 @@ const ExpenseTable = () => {
                   }).flat()}
                 </select>
               </div>
-              <button className="et-add-btn" onClick={() => setShowAddTransaction(true)}>
-                ＋ Add
-              </button>
+              <div className="et-btn-group">
+                <button className="et-import-btn" onClick={() => setShowImport(true)}>
+                  📥 Import
+                </button>
+                <button className="et-add-btn" onClick={() => setShowAddTransaction(true)}>
+                  ＋ Add
+                </button>
+              </div>
             </div>
 
             {/* Row 2: Search + Total side by side */}
@@ -1200,6 +1223,13 @@ const ExpenseTable = () => {
         <AddTransaction
           onClose={() => setShowAddTransaction(false)}
           onTransactionAdded={() => { setShowAddTransaction(false); setRefreshKey(k => k + 1); }}
+        />
+      )}
+
+      {showImport && (
+        <ImportTransactions
+          onClose={() => setShowImport(false)}
+          onImported={() => { setShowImport(false); setRefreshKey(k => k + 1); }}
         />
       )}
 
