@@ -8,7 +8,7 @@ import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
 import { formatAmount } from './utils/formatters.js';
 import { sortData } from './utils/dataUtils.js';
-import { getAuthData, apiPost } from './utils/api.js';
+import { getAuthData, apiGet, apiPost, apiDelete } from './utils/api.js';
 import { getRecurringTemplates, addRecurringTemplate, removeRecurringTemplate, markHandled, getPendingSuggestions } from './utils/recurringUtils.js';
 import RecurringSuggestions from './components/RecurringSuggestions.js';
 import ManageRecurring from './components/ManageRecurring.js';
@@ -51,9 +51,7 @@ const ExpenseTable = () => {
     setSwipedCard(null);
     setDeletingIndex(index);
     try {
-      const response = await apiPost('/api/delete-transaction', {
-        pageId: row.id,
-      });
+      const response = await apiDelete(`/api/transactions/${row.id}`);
       if (!response.ok) throw new Error(`Delete failed with status ${response.status}`);
       setOriginalData(prev => prev.filter((_, i) => i !== index));
       setExpandedCard(null);
@@ -107,7 +105,7 @@ const ExpenseTable = () => {
       const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === (now.getMonth() + 1);
       const day = isCurrentMonth ? now.getDate() : 1;
       const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const response = await apiPost('/api/transaction', {
+      const response = await apiPost('/api/transactions', {
         expense: suggestion.expense,
         amount: suggestion.amount,
         date: dateStr,
@@ -134,31 +132,23 @@ const ExpenseTable = () => {
   useEffect(() => {
 
     setIsLoading(true);
-    const userData = getAuthData();
-    const base = { month: selectedMonth, year: selectedYear };
-    const apiCalls = [
-      apiPost('/api/notion', { ...base, type: 'default' }).then(r => r.json()),
-    ];
-    if (userData?.isMe) {
-      apiCalls.push(
-        apiPost('/api/notion', { ...base, type: 'cc' }).then(r => r.json()).catch(() => ({ results: [] }))
-      );
-    }
-    const parse = (results) => results.map(row => ({
-      id: row.id,
-      expense: row.properties.Expense?.title?.[0]?.text?.content || '—',
-      amount: row.properties.Amount?.number || 0,
-      date: formatDate(row.properties.Date?.date?.start),
-      category: row.properties.Category?.select?.name || 'Other',
-      paymentMethod: row.properties['Payment Method']?.select?.name || 'Other',
-    }));
-    Promise.all(apiCalls).then(results => {
-      const combined = [...parse(results[0].results), ...(results[1] ? parse(results[1].results) : [])];
-      setOriginalData(combined);
-      setSelectedCategory('All');
-      setSelectedPaymentMethod('All');
-      setIsLoading(false);
-    }).catch(() => { setOriginalData([]); setRows([]); setIsLoading(false); });
+    // The server merges the default and credit card databases into one list
+    apiGet(`/api/transactions?month=${selectedMonth}&year=${selectedYear}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`Failed to load transactions: ${r.status}`);
+        return r.json();
+      })
+      .then(({ transactions }) => {
+        setOriginalData(transactions.map(t => ({
+          ...t,
+          expense: t.expense || '—',
+          date: formatDate(t.date),
+        })));
+        setSelectedCategory('All');
+        setSelectedPaymentMethod('All');
+        setIsLoading(false);
+      })
+      .catch(() => { setOriginalData([]); setRows([]); setIsLoading(false); });
   }, [selectedMonth, selectedYear, refreshKey]);
 
   useEffect(() => {

@@ -262,7 +262,7 @@ const ImportTransactions = ({ onClose, onImported }) => {
 
     for (const row of selectedRows) {
       try {
-        const resp = await apiPost('/api/transaction', {
+        const resp = await apiPost('/api/transactions', {
           expense: row.expense,
           amount: parseFloat(row.amount) || 0,
           date: row.date,

@@ -54,7 +54,7 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
     }
 
     try {
-      const response = await apiPost('/api/transaction', {
+      const response = await apiPost('/api/transactions', {
         expense: formData.expense.trim(),
         amount,
         date: formData.date,
