@@ -5,15 +5,14 @@ import {
   updateTransaction,
   deleteTransaction,
 } from '../../api/transactions.js';
-import { formatDate } from '../../shared/formatters.js';
 
-// The cache holds the server's rows as-is; display formatting happens in `select`
+// The cache holds the server's rows as-is (ISO dates)
 export const transactionKeys = {
   all: ['transactions'],
   month: (month, year) => ['transactions', year, month],
 };
 
-const toRow = (t) => ({ ...t, expense: t.expense || '—', date: formatDate(t.date) });
+const toRow = (t) => ({ ...t, expense: t.expense || '—' });
 // Module-level so the query can memoise the result between renders
 const selectRows = (rows) => rows.map(toRow);
 

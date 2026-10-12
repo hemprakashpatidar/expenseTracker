@@ -22,11 +22,11 @@ test('add mode: visible defaults are what gets saved, and text is not HTML-escap
   }));
 });
 
-test('edit mode: pre-fills, keeps unknown values as custom, converts dd-mm-yy dates', async () => {
+test('edit mode: pre-fills and keeps unknown values as custom', async () => {
   const onSubmit = vi.fn().mockResolvedValue();
   render(
     <TransactionForm
-      transaction={{ id: 'x', expense: 'Gym', amount: 1500, date: '05-10-26', category: 'Fitness', paymentMethod: 'Card' }}
+      transaction={{ id: 'x', expense: 'Gym', amount: 1500, date: '2026-10-05', category: 'Fitness', paymentMethod: 'Card' }}
       onSubmit={onSubmit}
       onClose={() => {}}
     />

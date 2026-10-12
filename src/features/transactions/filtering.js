@@ -1,16 +1,11 @@
-// Dates in state are display strings (dd-mm-yy); '—' means no date
-const parseDisplayDate = (value) => {
-  const [day, month, year] = value.split('-').map(Number);
-  return new Date(2000 + year, month - 1, day);
-};
-
 const compare = (a, b, sortBy) => {
   switch (sortBy) {
     case 'date': {
-      if (a.date === '—' && b.date === '—') return 0;
-      if (a.date === '—') return 1;
-      if (b.date === '—') return -1;
-      return parseDisplayDate(b.date) - parseDisplayDate(a.date);
+      // ISO dates compare correctly as strings; undated rows go last
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return b.date.localeCompare(a.date);
     }
     case 'amount':
       return b.amount - a.amount;

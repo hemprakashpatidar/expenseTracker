@@ -1,4 +1,5 @@
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { todayISO } from '../../shared/dates.js';
 
 // Bank statement parsing for CSV and text-based PDF exports. Dates come out as YYYY-MM-DD.
 
@@ -61,7 +62,7 @@ const parseDate = (str = '') => {
       if (mm) return `${year}-${String(mm).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     }
   }
-  return new Date().toISOString().split('T')[0];
+  return todayISO();
 };
 
 // ── CSV parser ────────────────────────────────────────────────────────────────
@@ -117,7 +118,7 @@ export const parseCSV = (text) => {
     const amount = cleanAmount(rawAmt);
     if (amount <= 0) continue;
     const desc = descIdx !== -1 ? cols[descIdx] || '' : cols.filter((_, idx) => idx !== dateIdx && idx !== amtIdx).join(' ');
-    const date = dateIdx !== -1 ? parseDate(cols[dateIdx] || '') : new Date().toISOString().split('T')[0];
+    const date = dateIdx !== -1 ? parseDate(cols[dateIdx] || '') : todayISO();
     rows.push({
       expense: desc.slice(0, 100).trim() || 'Imported',
       amount,

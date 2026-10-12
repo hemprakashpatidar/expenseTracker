@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { getCategoryColor, getCategoryIcon } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
+import { formatDisplayDate } from '../../shared/dates.js';
 
 const SWIPE_OPEN_PX = -60;
 const SWIPE_CLOSE_PX = 20;
@@ -24,6 +25,7 @@ const TransactionCard = ({
 }) => {
   const touchRef = useRef({ startX: 0, startY: 0, wasSwiped: false });
   const color = getCategoryColor(t.category);
+  const displayDate = formatDisplayDate(t.date);
 
   const handleTouchStart = (e) => {
     touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, wasSwiped: false };
@@ -73,7 +75,7 @@ const TransactionCard = ({
           </div>
           <div className="et-tx-info">
             <div className="et-tx-name">{t.expense}</div>
-            <div className="et-tx-date">{t.date}</div>
+            <div className="et-tx-date">{displayDate}</div>
           </div>
           <div className="et-tx-amount">₹{formatAmount(t.amount)}</div>
         </div>
@@ -91,7 +93,7 @@ const TransactionCard = ({
             </div>
             <div className="et-expanded-chip">
               <div className="et-expanded-label">Date</div>
-              <div className="et-expanded-val">{t.date}</div>
+              <div className="et-expanded-val">{displayDate}</div>
             </div>
             <div className="et-expanded-chip">
               <div className="et-expanded-label">Description</div>

@@ -1,24 +1,10 @@
 import { useState } from 'react';
 import { getCategoryIcon } from '../../shared/categoryStyle.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
+import { todayISO } from '../../shared/dates.js';
 import styles from './TransactionForm.module.css';
 
 const CUSTOM = 'Other (custom)';
-const today = () => new Date().toISOString().split('T')[0];
-
-// Convert display date (DD-MM-YY or DD-MM-YYYY) back to YYYY-MM-DD for <input type="date">
-const toInputDate = (dateStr) => {
-  if (!dateStr) return today();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    const [dd, mm, yy] = parts;
-    const year = yy.length === 2 ? `20${yy}` : yy;
-    return `${year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
-  }
-  return today();
-};
-
 // A value outside the known list is shown as "Other (custom)" with the text filled in
 const splitKnown = (value, known) => known.includes(value)
   ? { selected: value, custom: '' }
@@ -27,7 +13,7 @@ const splitKnown = (value, known) => known.includes(value)
 const initialValues = (transaction) => {
   if (!transaction) {
     return {
-      expense: '', amount: '', date: today(),
+      expense: '', amount: '', date: todayISO(),
       category: 'Other', customCategory: '',
       paymentMethod: 'UPI', customPayment: '',
     };
@@ -37,7 +23,7 @@ const initialValues = (transaction) => {
   return {
     expense: transaction.expense || '',
     amount: String(transaction.amount || ''),
-    date: toInputDate(transaction.date),
+    date: transaction.date || todayISO(),
     category: category.selected, customCategory: category.custom,
     paymentMethod: payment.selected, customPayment: payment.custom,
   };

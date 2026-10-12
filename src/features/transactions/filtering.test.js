@@ -1,10 +1,10 @@
 import { applyFilters, uniqueValues, totalByCategory } from './filtering.js';
 
 const rows = [
-  { id: 'a', expense: 'Swiggy dinner', amount: 450, date: '05-10-26', category: 'Food & Dining', paymentMethod: 'UPI' },
-  { id: 'b', expense: 'Uber', amount: 120, date: '12-10-26', category: 'Transportation', paymentMethod: 'Card' },
-  { id: 'c', expense: 'Groceries', amount: 900, date: '01-10-26', category: 'Groceries', paymentMethod: 'UPI' },
-  { id: 'd', expense: 'No date', amount: 10, date: '—', category: 'Other', paymentMethod: 'Cash' },
+  { id: 'a', expense: 'Swiggy dinner', amount: 450, date: '2026-10-05', category: 'Food & Dining', paymentMethod: 'UPI' },
+  { id: 'b', expense: 'Uber', amount: 120, date: '2026-10-12', category: 'Transportation', paymentMethod: 'Card' },
+  { id: 'c', expense: 'Groceries', amount: 900, date: '2026-10-01', category: 'Groceries', paymentMethod: 'UPI' },
+  { id: 'd', expense: 'No date', amount: 10, date: null, category: 'Other', paymentMethod: 'Cash' },
 ];
 const base = { category: 'All', paymentMethod: 'All', search: '', sortBy: 'date', sortDirection: 'desc' };
 const ids = (list) => list.map(r => r.id);

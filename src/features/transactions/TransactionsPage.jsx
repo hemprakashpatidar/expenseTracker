@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
 import { getAuthData } from '../auth/session.js';
 import { MONTH_NAMES } from '../../shared/constants.js';
+import { toISODate } from '../../shared/dates.js';
 import AppHeader from '../../shared/AppHeader.jsx';
 import TransactionForm from './TransactionForm.jsx';
 import MonthPicker from './MonthPicker.jsx';
@@ -22,8 +23,6 @@ import ImportTransactions from '../import/ImportTransactions.jsx';
 import RecurringSuggestions from '../recurring/RecurringSuggestions.jsx';
 import ManageRecurring from '../recurring/ManageRecurring.jsx';
 import { useRecurring } from '../recurring/useRecurring.js';
-
-const pad = (n) => String(n).padStart(2, '0');
 
 const TransactionsPage = () => {
   const { logout } = useAuth();
@@ -90,7 +89,7 @@ const TransactionsPage = () => {
     createMutation.mutate({
       expense: suggestion.expense,
       amount: suggestion.amount,
-      date: `${year}-${pad(month)}-${pad(day)}`,
+      date: toISODate(new Date(year, month - 1, day)),
       category: suggestion.category,
       paymentMethod: suggestion.paymentMethod,
     }, {
