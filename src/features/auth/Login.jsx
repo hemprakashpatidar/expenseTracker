@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { useState, useEffect } from 'react';
+import { useAuth } from './useAuth.js';
 
 const Login = ({ onSwitchToRegister }) => {
   const [username, setUsername] = useState('');
@@ -118,7 +118,7 @@ const Login = ({ onSwitchToRegister }) => {
   };
 
   // Add spinner animation
-  React.useEffect(() => {
+  useEffect(() => {
     if (!document.getElementById('login-spinner')) {
       const style = document.createElement('style');
       style.id = 'login-spinner';

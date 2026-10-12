@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { getCategoryIcon } from '../utils/categoryUtils.js';
-import { apiPatch } from '../utils/api.js';
+import { useState } from 'react';
+import { getCategoryIcon } from '../../shared/categoryStyle.js';
+import { apiPatch } from '../../api/client.js';
 
 // Convert display date (DD-MM-YY or DD-MM-YYYY) back to YYYY-MM-DD for <input type="date">
 const toInputDate = (dateStr) => {

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { getCategoryIcon } from '../utils/categoryUtils.js';
-import { apiPost } from '../utils/api.js';
+import { useState } from 'react';
+import { getCategoryIcon } from '../../shared/categoryStyle.js';
+import { apiPost } from '../../api/client.js';
 
 const AddTransaction = ({ onClose, onTransactionAdded }) => {
   const [formData, setFormData] = useState({

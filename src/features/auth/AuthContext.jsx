@@ -1,34 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { AUTH_STORAGE_KEY, AUTH_EXPIRED_EVENT, getAuthData, isTokenExpired } from '../utils/api.js';
-
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import { useState, useEffect, useCallback } from 'react';
+import { AuthContext } from './useAuth.js';
+import { AUTH_EXPIRED_EVENT, getAuthData, isTokenExpired, saveSession, clearSession } from './session.js';
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Restore the session synchronously so the first render already knows (sessions saved before token auth have no token)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const savedAuth = getAuthData();
+    if (savedAuth?.token && !isTokenExpired(savedAuth.token)) return true;
+    if (savedAuth) clearSession();
+    return false;
+  });
 
   const logout = useCallback(() => {
     setIsAuthenticated(false);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  }, []);
-
-  // Check for existing session on app load (sessions saved before token auth have no token)
-  useEffect(() => {
-    const savedAuth = getAuthData();
-    if (savedAuth?.token && !isTokenExpired(savedAuth.token)) {
-      setIsAuthenticated(true);
-    } else if (savedAuth) {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
-    setLoading(false);
+    clearSession();
   }, []);
 
   // Any API call that comes back 401 ends the session
@@ -49,17 +34,13 @@ export const AuthProvider = ({ children }) => {
       });
       const loginResponse = await response.json();
       if (response.ok) {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
-          token: loginResponse.token,
-          userName: loginResponse.user.userName,
-          isMe: loginResponse.user.isMe
-        }));
+        saveSession(loginResponse);
         setIsAuthenticated(true);
         return { success: true, user: loginResponse.user };
       } else {
         return { success: false, error: loginResponse.message };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Login failed. Please try again.' };
     }
   };
@@ -92,8 +73,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     register,
-    logout,
-    loading
+    logout
   };
 
   return (

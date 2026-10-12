@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { useState, useEffect } from 'react';
+import { useAuth } from './useAuth.js';
 
 const Register = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,6 @@ const Register = ({ onSwitchToLogin }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: {} });
   const { login, register } = useAuth();
 
   // Password strength validation
@@ -59,15 +58,10 @@ const Register = ({ onSwitchToLogin }) => {
     });
   };
 
-  // Update password strength on password change
-  React.useEffect(() => {
-    if (formData.password) {
-      const strength = validatePasswordStrength(formData.password);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength({ score: 0, feedback: {} });
-    }
-  }, [formData.password]);
+  // Derived from the current password on every render
+  const passwordStrength = formData.password
+    ? validatePasswordStrength(formData.password)
+    : { score: 0, feedback: {} };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -292,7 +286,7 @@ const Register = ({ onSwitchToLogin }) => {
   };
 
   // Add spinner animation
-  React.useEffect(() => {
+  useEffect(() => {
     if (!document.getElementById('register-spinner')) {
       const style = document.createElement('style');
       style.id = 'register-spinner';

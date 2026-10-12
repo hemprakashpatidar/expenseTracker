@@ -1,5 +1,5 @@
-import React from 'react';
-import { getCategoryIcon, getCategoryColor, formatAmount } from '../utils/index.js';
+import { getCategoryIcon, getCategoryColor } from '../../shared/categoryStyle.js';
+import { formatAmount } from '../../shared/formatters.js';
 
 const RecurringSuggestions = ({ suggestions, onConfirm, onSkip, addingId, allTemplatesCount, onManage }) => {
   if (!allTemplatesCount) return null;

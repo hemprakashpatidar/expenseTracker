@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { getCategoryIcon, getCategoryColor, formatAmount } from '../utils/index.js';
-import { removeRecurringTemplate } from '../utils/recurringUtils.js';
+import { useState } from 'react';
+import { getCategoryIcon, getCategoryColor } from '../../shared/categoryStyle.js';
+import { formatAmount } from '../../shared/formatters.js';
+import { removeRecurringTemplate } from './storage.js';
 
 const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
   const [confirmDelete, setConfirmDelete] = useState(null);
