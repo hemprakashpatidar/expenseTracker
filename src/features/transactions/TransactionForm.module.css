@@ -1,0 +1,288 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 30, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.modal {
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: slideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* drag handle */
+.handle {
+  width: 36px;
+  height: 4px;
+  background: #e2e4ea;
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+
+/* header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #f0f1f5;
+}
+.edit .header { padding-bottom: 14px; }
+.headerTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.titlePill {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1.5px solid #ddd6fe;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.close {
+  width: 30px;
+  height: 30px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.close:hover { background: #e5e7eb; color: #1a1a2e; }
+
+/* body */
+.body {
+  padding: 14px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+/* error */
+.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* field */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.input {
+  background: #f8f9fb;
+  border: 1.5px solid transparent;
+  border-radius: 11px;
+  padding: 10px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.input:focus {
+  border-color: #4f46e5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.input::placeholder { color: #c0c4d0; }
+
+/* amount row */
+.amountRow { display: flex; gap: 8px; }
+.amountWrap {
+  flex: 1;
+  position: relative;
+}
+.currency {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: 700;
+  color: #4f46e5;
+  font-family: 'DM Mono', monospace;
+  pointer-events: none;
+}
+.amountInput {
+  background: #f8f9fb;
+  border: 1.5px solid transparent;
+  border-radius: 11px;
+  padding: 10px 12px 10px 26px;
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.amountInput:focus {
+  border-color: #4f46e5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.amountInput::placeholder { color: #c0c4d0; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+
+/* styled select */
+.selectWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.selectIcon {
+  position: absolute;
+  left: 12px;
+  font-size: 16px;
+  pointer-events: none;
+  z-index: 1;
+}
+.selectChevron {
+  position: absolute;
+  right: 12px;
+  font-size: 11px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+.styledSelect {
+  width: 100%;
+  background: #f8f9fb;
+  border: 1.5px solid transparent;
+  border-radius: 11px;
+  padding: 10px 34px 10px 36px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.styledSelect:focus {
+  border-color: #4f46e5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.customInput {
+  margin-top: 7px;
+  animation: slideUp 0.18s ease;
+}
+
+/* actions */
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.cancel {
+  flex: 1;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cancel:hover { background: #e5e7eb; }
+.submit {
+  flex: 2;
+  background: #4f46e5;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── Edit mode: amber focus on text/select, purple amount and submit ── */
+.edit .input:focus,
+.edit .styledSelect:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}
+.edit .input.dateInput:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.edit .currency { color: #7c3aed; }
+.edit .amountInput:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+.edit .submit { background: #7c3aed; }
+
+/* Fields that differ from the saved transaction (wins over focus styles, as before) */
+.edit .changed {
+  border-color: #7c3aed !important;
+  background: #f5f3ff !important;
+}

@@ -33,8 +33,9 @@ export const useTransactions = (month, year) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
-  const replaceLocal = (updated) =>
-    setTransactions(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+  // `saved` is the server's copy (ISO date), so it goes through the same mapping as loaded rows
+  const replaceLocal = (saved) =>
+    setTransactions(prev => prev.map(t => t.id === saved.id ? toRow(saved) : t));
 
   return { transactions, isLoading, refresh, remove, replaceLocal };
 };

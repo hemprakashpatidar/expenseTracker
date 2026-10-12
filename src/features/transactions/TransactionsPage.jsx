@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
 import { getAuthData } from '../auth/session.js';
 import { apiPost } from '../../api/client.js';
+import { createTransaction, updateTransaction } from '../../api/transactions.js';
 import { MONTH_NAMES } from '../../shared/constants.js';
 import AppHeader from '../../shared/AppHeader.jsx';
-import AddTransaction from './AddTransaction.jsx';
-import EditTransaction from './EditTransaction.jsx';
+import TransactionForm from './TransactionForm.jsx';
 import MonthPicker from './MonthPicker.jsx';
 import SearchBox from './SearchBox.jsx';
 import TotalCard from './TotalCard.jsx';
@@ -838,9 +838,9 @@ const TransactionsPage = () => {
       </div>
 
       {modal === 'add' && (
-        <AddTransaction
+        <TransactionForm
+          onSubmit={async (values) => { await createTransaction(values); refresh(); }}
           onClose={closeModal}
-          onTransactionAdded={() => { closeModal(); refresh(); }}
         />
       )}
 
@@ -860,13 +860,10 @@ const TransactionsPage = () => {
       )}
 
       {editingTransaction && (
-        <EditTransaction
+        <TransactionForm
           transaction={editingTransaction}
+          onSubmit={async (values) => replaceLocal(await updateTransaction(editingTransaction.id, values))}
           onClose={() => setEditingTransaction(null)}
-          onTransactionUpdated={(updated) => {
-            replaceLocal(updated);
-            setEditingTransaction(null);
-          }}
         />
       )}
 
