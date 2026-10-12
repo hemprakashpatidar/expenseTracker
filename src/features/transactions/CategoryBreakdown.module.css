@@ -1,0 +1,52 @@
+.toggle {
+  background: #fff;
+  color: #6b7280;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle:hover { border-color: #c4b5fd; color: #4f46e5; }
+.toggle.open { border-color: #c4b5fd; color: #4f46e5; background: #ede9ff; }
+.arrow { font-size: 11px; }
+
+.panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+.heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+.card {
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  color: white;
+  transition: transform 0.15s;
+  cursor: default;
+}
+.card:hover { transform: translateY(-2px); }
+.icon { font-size: 18px; margin-bottom: 4px; }
+.category { font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.9; }
+.amount { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; }
+.count { font-size: 10px; opacity: 0.75; margin-top: 2px; }
