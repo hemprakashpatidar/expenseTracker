@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { apiPost } from '../../api/client.js';
+import { createTransaction } from '../../api/transactions.js';
 import { getCategoryIcon } from '../../shared/categoryStyle.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
 import { parseCSV, parsePDFText, extractPDFText } from './parsers.js';
@@ -73,14 +73,14 @@ const ImportTransactions = ({ onClose, onImported }) => {
 
     for (const row of selectedRows) {
       try {
-        const resp = await apiPost('/api/transactions', {
+        await createTransaction({
           expense: row.expense,
           amount: parseFloat(row.amount) || 0,
           date: row.date,
           category: row.category,
           paymentMethod: row.paymentMethod,
         });
-        if (resp.ok) done++; else failed++;
+        done++;
       } catch { failed++; }
       setProgress({ done: done + failed, total: selectedRows.length, failed });
     }

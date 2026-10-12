@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
 import { getAuthData } from '../auth/session.js';
-import { apiPost } from '../../api/client.js';
-import { createTransaction, updateTransaction } from '../../api/transactions.js';
 import { MONTH_NAMES } from '../../shared/constants.js';
 import AppHeader from '../../shared/AppHeader.jsx';
 import TransactionForm from './TransactionForm.jsx';
@@ -12,7 +10,13 @@ import TotalCard from './TotalCard.jsx';
 import Filters from './Filters.jsx';
 import CategoryBreakdown from './CategoryBreakdown.jsx';
 import TransactionList from './TransactionList.jsx';
-import { useTransactions } from './useTransactions.js';
+import {
+  useMonthTransactions,
+  useCreateTransaction,
+  useUpdateTransaction,
+  useDeleteTransaction,
+  useInvalidateTransactions,
+} from './queries.js';
 import { applyFilters, uniqueValues, totalByCategory } from './filtering.js';
 import ImportTransactions from '../import/ImportTransactions.jsx';
 import RecurringSuggestions from '../recurring/RecurringSuggestions.jsx';
@@ -35,11 +39,14 @@ const TransactionsPage = () => {
 
   const [modal, setModal] = useState(null); // 'add' | 'import' | 'recurring' | null
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState(false);
   const [addingRecurringId, setAddingRecurringId] = useState(null);
 
-  const { transactions, isLoading, refresh, remove, replaceLocal } = useTransactions(month, year);
+  const { data: transactions = [], isLoading, isError, refetch } = useMonthTransactions(month, year);
+  const createMutation = useCreateTransaction();
+  const updateMutation = useUpdateTransaction();
+  const deleteMutation = useDeleteTransaction();
+  const invalidateTransactions = useInvalidateTransactions();
   const recurring = useRecurring(year, month);
 
   const rows = useMemo(
@@ -64,42 +71,33 @@ const TransactionsPage = () => {
 
   // Resolves true when the row was deleted, so the list can collapse it
   const handleDelete = async (transaction) => {
-    setDeletingId(transaction.id);
     try {
-      await remove(transaction.id);
+      await deleteMutation.mutateAsync(transaction.id);
       return true;
     } catch (err) {
       console.error('Delete failed', err);
       setDeleteError(true);
       setTimeout(() => setDeleteError(false), 3000);
       return false;
-    } finally {
-      setDeletingId(null);
     }
   };
 
-  const handleConfirmSuggestion = async (suggestion) => {
+  const handleConfirmSuggestion = (suggestion) => {
+    const now = new Date();
+    const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+    const day = isCurrentMonth ? now.getDate() : 1;
     setAddingRecurringId(suggestion.id);
-    try {
-      const now = new Date();
-      const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
-      const day = isCurrentMonth ? now.getDate() : 1;
-      const response = await apiPost('/api/transactions', {
-        expense: suggestion.expense,
-        amount: suggestion.amount,
-        date: `${year}-${pad(month)}-${pad(day)}`,
-        category: suggestion.category,
-        paymentMethod: suggestion.paymentMethod,
-      });
-      if (response.ok) {
-        recurring.markHandled(suggestion.id);
-        refresh();
-      }
-    } catch (err) {
-      console.error('Failed to add recurring transaction', err);
-    } finally {
-      setAddingRecurringId(null);
-    }
+    createMutation.mutate({
+      expense: suggestion.expense,
+      amount: suggestion.amount,
+      date: `${year}-${pad(month)}-${pad(day)}`,
+      category: suggestion.category,
+      paymentMethod: suggestion.paymentMethod,
+    }, {
+      onSuccess: () => recurring.markHandled(suggestion.id),
+      onError: err => console.error('Failed to add recurring transaction', err),
+      onSettled: () => setAddingRecurringId(null),
+    });
   };
 
   const closeModal = () => setModal(null);
@@ -822,13 +820,15 @@ const TransactionsPage = () => {
           <TransactionList
             transactions={rows}
             isLoading={isLoading}
+            loadFailed={isError}
+            onRetry={refetch}
             hasAnyTransactions={transactions.length > 0}
             monthName={MONTH_NAMES[month - 1]}
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={handleSort}
             onClearFilters={clearFilters}
-            deletingId={deletingId}
+            deletingId={deleteMutation.isPending ? deleteMutation.variables : null}
             onDelete={handleDelete}
             onEdit={setEditingTransaction}
             isRecurring={recurring.isRecurring}
@@ -839,7 +839,7 @@ const TransactionsPage = () => {
 
       {modal === 'add' && (
         <TransactionForm
-          onSubmit={async (values) => { await createTransaction(values); refresh(); }}
+          onSubmit={values => createMutation.mutateAsync(values)}
           onClose={closeModal}
         />
       )}
@@ -847,7 +847,7 @@ const TransactionsPage = () => {
       {modal === 'import' && (
         <ImportTransactions
           onClose={closeModal}
-          onImported={() => { closeModal(); refresh(); }}
+          onImported={() => { closeModal(); invalidateTransactions(); }}
         />
       )}
 
@@ -862,7 +862,7 @@ const TransactionsPage = () => {
       {editingTransaction && (
         <TransactionForm
           transaction={editingTransaction}
-          onSubmit={async (values) => replaceLocal(await updateTransaction(editingTransaction.id, values))}
+          onSubmit={changes => updateMutation.mutateAsync({ id: editingTransaction.id, changes })}
           onClose={() => setEditingTransaction(null)}
         />
       )}

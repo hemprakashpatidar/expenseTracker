@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from './queryClient.js';
 import { AuthProvider } from './features/auth/AuthContext.jsx';
 import { useAuth } from './features/auth/useAuth.js';
 import Login from './features/auth/Login.jsx';
@@ -22,12 +24,15 @@ const AppContent = () => {
 };
 
 function App() {
+  const [queryClient] = useState(createQueryClient);
   return (
-    <AuthProvider>
-      <div className="App">
-        <AppContent />
-      </div>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <div className="App">
+          <AppContent />
+        </div>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

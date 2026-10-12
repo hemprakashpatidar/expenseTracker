@@ -5,6 +5,7 @@
   "homepage": "https://ver-px-fe.vercel.app",
   "type": "module",
   "dependencies": {
+    "@tanstack/react-query": "^5.104.2",
     "pdfjs-dist": "^5.6.205",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

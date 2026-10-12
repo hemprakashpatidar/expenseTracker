@@ -61,9 +61,24 @@ const EmptyState = ({ hasAnyTransactions, monthName, onClearFilters }) => (
   </div>
 );
 
+const LoadError = ({ onRetry }) => (
+  <div className="et-empty">
+    <div className="et-empty-icon">⚠️</div>
+    <div>Couldn't load transactions</div>
+    <button
+      onClick={() => onRetry()}
+      style={{ marginTop: '8px', background: 'none', border: 'none', color: '#4f46e5', fontSize: '12px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer', textDecoration: 'underline' }}
+    >
+      Try again
+    </button>
+  </div>
+);
+
 const TransactionList = ({
   transactions,
   isLoading,
+  loadFailed,
+  onRetry,
   hasAnyTransactions,
   monthName,
   sortBy,
@@ -101,6 +116,7 @@ const TransactionList = ({
 
   const renderBody = () => {
     if (isLoading) return <SkeletonCards />;
+    if (loadFailed) return <LoadError onRetry={onRetry} />;
     if (transactions.length === 0) {
       return <EmptyState hasAnyTransactions={hasAnyTransactions} monthName={monthName} onClearFilters={onClearFilters} />;
     }

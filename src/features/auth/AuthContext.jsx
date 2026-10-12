@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthContext } from './useAuth.js';
 import { AUTH_EXPIRED_EVENT, getAuthData, isTokenExpired, saveSession, clearSession } from './session.js';
 
@@ -11,10 +12,14 @@ export const AuthProvider = ({ children }) => {
     return false;
   });
 
+  const queryClient = useQueryClient();
+
+  // Drop cached data too, so the next person to sign in never sees it
   const logout = useCallback(() => {
     setIsAuthenticated(false);
     clearSession();
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   // Any API call that comes back 401 ends the session
   useEffect(() => {
