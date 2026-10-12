@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const apiPath = process.env.REACT_APP_API_PATH;
+      const apiPath = import.meta.env.VITE_API_PATH;
       const response = await fetch(`${apiPath}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const apiPath = process.env.REACT_APP_API_PATH;
+      const apiPath = import.meta.env.VITE_API_PATH;
       const response = await fetch(`${apiPath}/api/auth/register`, {
         method: 'POST',
         headers: {

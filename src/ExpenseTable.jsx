@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useAuth } from './contexts/AuthContext.js';
-import AddTransaction from './components/AddTransaction.js';
-import EditTransaction from './components/EditTransaction.js';
-import ImportTransactions from './components/ImportTransactions.js';
+import { useAuth } from './contexts/AuthContext.jsx';
+import AddTransaction from './components/AddTransaction.jsx';
+import EditTransaction from './components/EditTransaction.jsx';
+import ImportTransactions from './components/ImportTransactions.jsx';
 import { addAnimationStyles } from './utils/animations.js';
 import { formatDate } from './utils/formatters.js';
 import { getCategoryColor, getCategoryIcon } from './utils/categoryUtils.js';
@@ -10,8 +10,8 @@ import { formatAmount } from './utils/formatters.js';
 import { sortData } from './utils/dataUtils.js';
 import { getAuthData, apiGet, apiPost, apiDelete } from './utils/api.js';
 import { getRecurringTemplates, addRecurringTemplate, removeRecurringTemplate, markHandled, getPendingSuggestions } from './utils/recurringUtils.js';
-import RecurringSuggestions from './components/RecurringSuggestions.js';
-import ManageRecurring from './components/ManageRecurring.js';
+import RecurringSuggestions from './components/RecurringSuggestions.jsx';
+import ManageRecurring from './components/ManageRecurring.jsx';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',

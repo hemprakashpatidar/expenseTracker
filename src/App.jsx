@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext.js';
-import Login from './components/Login.js';
-import Register from './components/Register.js';
-import ExpenseTable from './ExpenseTable.js';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+import Login from './components/Login.jsx';
+import Register from './components/Register.jsx';
+import ExpenseTable from './ExpenseTable.jsx';
 
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth();

@@ -21,7 +21,7 @@ export const isTokenExpired = (token) => {
 };
 
 const apiRequest = async (method, endpoint, body) => {
-  const apiPath = process.env.REACT_APP_API_PATH;
+  const apiPath = import.meta.env.VITE_API_PATH;
   const token = getAuthData()?.token;
   const response = await fetch(`${apiPath}${endpoint}`, {
     method,

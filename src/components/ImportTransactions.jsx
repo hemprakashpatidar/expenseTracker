@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { apiPost } from '../utils/api.js';
 import { getCategoryIcon } from '../utils/categoryUtils.js';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -181,7 +182,7 @@ const parsePDFText = (allText) => {
 
 const extractPDFText = async (file) => {
   const pdfjsLib = await import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let text = '';
