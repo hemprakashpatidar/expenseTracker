@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from './useAuth.js';
 import { cx } from '../../shared/cx.js';
 import styles from './AuthForm.module.css';
 
-const Register = ({ onSwitchToLogin }) => {
+const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -233,9 +234,9 @@ const Register = ({ onSwitchToLogin }) => {
 
           <div className={styles.switchRow}>
             Already have an account?{' '}
-            <button type="button" className={styles.switchButton} onClick={onSwitchToLogin}>
+            <Link to="/login" className={styles.switchButton}>
               Sign in here
-            </button>
+            </Link>
           </div>
         </form>
       </div>
