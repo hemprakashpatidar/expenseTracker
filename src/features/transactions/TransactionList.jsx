@@ -1,26 +1,15 @@
 import { useState } from 'react';
 import TransactionCard from './TransactionCard.jsx';
+import { cx } from '../../shared/cx.js';
+import skeleton from '../../shared/Skeleton.module.css';
+import styles from './TransactionList.module.css';
 
 const SORT_OPTIONS = [{ key: 'date', label: '📅 Date' }, { key: 'amount', label: '₹ Amount' }];
 
 const SortButtons = ({ sortBy, sortDirection, onSort }) => (
-  <div style={{ display: 'flex', gap: '5px' }}>
+  <div className={styles.sortButtons}>
     {SORT_OPTIONS.map(({ key, label }) => (
-      <button
-        key={key}
-        onClick={() => onSort(key)}
-        style={{
-          background: sortBy === key ? '#ede9ff' : 'transparent',
-          border: sortBy === key ? '1.5px solid #c4b5fd' : '1.5px solid transparent',
-          borderRadius: '12px',
-          padding: '3px 9px',
-          fontSize: '11px',
-          fontWeight: 700,
-          color: sortBy === key ? '#4f46e5' : '#9ca3af',
-          fontFamily: "'DM Sans', sans-serif",
-          cursor: 'pointer',
-        }}
-      >
+      <button key={key} className={cx(styles.sortBtn, sortBy === key && styles.active)} onClick={() => onSort(key)}>
         {label} {sortBy === key ? (sortDirection === 'desc' ? '↓' : '↑') : ''}
       </button>
     ))}
@@ -28,49 +17,39 @@ const SortButtons = ({ sortBy, sortDirection, onSort }) => (
 );
 
 const SkeletonCards = () => Array.from({ length: 5 }).map((_, i) => (
-  <div key={i} className="et-skeleton-card">
-    <div className="et-sk et-sk-circle" />
-    <div className="et-sk-info">
-      <div className="et-sk" style={{ height: '13px', width: `${55 + (i % 3) * 15}%` }} />
-      <div className="et-sk" style={{ height: '11px', width: '35%' }} />
+  <div key={i} className={skeleton.card}>
+    <div className={cx(skeleton.block, skeleton.circle)} />
+    <div className={skeleton.info}>
+      <div className={cx(skeleton.block, styles.skLine)} style={{ width: `${55 + (i % 3) * 15}%` }} />
+      <div className={cx(skeleton.block, styles.skDate)} />
     </div>
-    <div className="et-sk" style={{ height: '14px', width: '52px' }} />
+    <div className={cx(skeleton.block, styles.skAmount)} />
   </div>
 ));
 
 const EmptyState = ({ hasAnyTransactions, monthName, onClearFilters }) => (
-  <div className="et-empty">
+  <div className={styles.empty}>
     {!hasAnyTransactions ? (
       <>
-        <div className="et-empty-icon">📭</div>
+        <div className={styles.emptyIcon}>📭</div>
         <div>No expenses in {monthName}</div>
-        <div style={{ fontSize: '11px', marginTop: '5px', color: '#c0c4d0' }}>Tap + Add to record your first one</div>
+        <div className={styles.emptyHint}>Tap + Add to record your first one</div>
       </>
     ) : (
       <>
-        <div className="et-empty-icon">🔍</div>
+        <div className={styles.emptyIcon}>🔍</div>
         <div>No results match your filters</div>
-        <button
-          onClick={onClearFilters}
-          style={{ marginTop: '8px', background: 'none', border: 'none', color: '#4f46e5', fontSize: '12px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer', textDecoration: 'underline' }}
-        >
-          Clear filters
-        </button>
+        <button className={styles.linkButton} onClick={onClearFilters}>Clear filters</button>
       </>
     )}
   </div>
 );
 
 const LoadError = ({ onRetry }) => (
-  <div className="et-empty">
-    <div className="et-empty-icon">⚠️</div>
+  <div className={styles.empty}>
+    <div className={styles.emptyIcon}>⚠️</div>
     <div>Couldn't load transactions</div>
-    <button
-      onClick={() => onRetry()}
-      style={{ marginTop: '8px', background: 'none', border: 'none', color: '#4f46e5', fontSize: '12px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer', textDecoration: 'underline' }}
-    >
-      Try again
-    </button>
+    <button className={styles.linkButton} onClick={() => onRetry()}>Try again</button>
   </div>
 );
 
@@ -142,9 +121,9 @@ const TransactionList = ({
   };
 
   return (
-    <div className="et-list">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px' }}>
-        <div className="et-section-label">Transactions</div>
+    <div className={styles.list}>
+      <div className={styles.header}>
+        <div className={styles.sectionLabel}>Transactions</div>
         <SortButtons sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
       </div>
       {renderBody()}

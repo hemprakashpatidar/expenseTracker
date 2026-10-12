@@ -1,0 +1,25 @@
+.wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  min-width: 0;
+}
+.icon { font-size: 14px; flex-shrink: 0; }
+.select {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  padding: 9px 0;
+  background: transparent;
+  cursor: pointer;
+  min-width: 0;
+}

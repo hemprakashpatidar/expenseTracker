@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { getCategoryIcon } from '../../shared/categoryStyle.js';
+import { cx } from '../../shared/cx.js';
+import styles from './Filters.module.css';
 
 const Filters = ({ categories, paymentMethods, category, paymentMethod, onCategoryChange, onPaymentMethodChange }) => {
   const [showPanel, setShowPanel] = useState(false);
@@ -8,35 +10,35 @@ const Filters = ({ categories, paymentMethods, category, paymentMethod, onCatego
   return (
     <>
       {/* Filter row: toggle button + active chips */}
-      <div className="et-filter-row">
+      <div className={styles.row}>
         <button
-          className={`et-filter-toggle${activeCount > 0 ? ' has-filters' : ''}`}
+          className={cx(styles.toggle, activeCount > 0 && styles.hasFilters)}
           onClick={() => setShowPanel(open => !open)}
         >
           ⚙ Filters{activeCount > 0 ? ` · ${activeCount}` : ''}
         </button>
         {category !== 'All' && (
-          <button className="et-active-chip" onClick={() => onCategoryChange('All')}>
-            {getCategoryIcon(category)} {category} <span className="et-chip-x">×</span>
+          <button className={styles.chip} onClick={() => onCategoryChange('All')}>
+            {getCategoryIcon(category)} {category} <span className={styles.chipX}>×</span>
           </button>
         )}
         {paymentMethod !== 'All' && (
-          <button className="et-active-chip" onClick={() => onPaymentMethodChange('All')}>
-            💳 {paymentMethod} <span className="et-chip-x">×</span>
+          <button className={styles.chip} onClick={() => onPaymentMethodChange('All')}>
+            💳 {paymentMethod} <span className={styles.chipX}>×</span>
           </button>
         )}
       </div>
 
       {/* Collapsible filter panel */}
       {showPanel && (
-        <div className="et-filter-panel">
-          <div className="et-filter-section">
-            <div className="et-filter-section-label">Category</div>
-            <div className="et-cats">
+        <div className={styles.panel}>
+          <div className={styles.section}>
+            <div className={styles.sectionLabel}>Category</div>
+            <div className={styles.options}>
               {categories.map(cat => (
                 <button
                   key={cat}
-                  className={`et-cat-btn${category === cat ? ' active' : ''}`}
+                  className={cx(styles.option, category === cat && styles.active)}
                   onClick={() => { onCategoryChange(cat); setShowPanel(false); }}
                 >
                   {cat === 'All' ? '🗂' : getCategoryIcon(cat)} {cat}
@@ -45,13 +47,13 @@ const Filters = ({ categories, paymentMethods, category, paymentMethod, onCatego
             </div>
           </div>
           {paymentMethods.length > 1 && (
-            <div className="et-filter-section">
-              <div className="et-filter-section-label">Payment Method</div>
-              <div className="et-cats">
+            <div className={styles.section}>
+              <div className={styles.sectionLabel}>Payment Method</div>
+              <div className={styles.options}>
                 {paymentMethods.map(pm => (
                   <button
                     key={pm}
-                    className={`et-cat-btn${paymentMethod === pm ? ' active' : ''}`}
+                    className={cx(styles.option, paymentMethod === pm && styles.active)}
                     onClick={() => { onPaymentMethodChange(pm); setShowPanel(false); }}
                   >
                     {pm === 'All' ? '💳' : pm}

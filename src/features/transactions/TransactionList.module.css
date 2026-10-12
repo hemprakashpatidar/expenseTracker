@@ -1,0 +1,65 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 2px;
+}
+
+.sortButtons { display: flex; gap: 5px; }
+.sortBtn {
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+.sortBtn.active {
+  background: #ede9ff;
+  border-color: #c4b5fd;
+  color: #4f46e5;
+}
+
+.skLine { height: 13px; }
+.skDate { height: 11px; width: 35%; }
+.skAmount { height: 14px; width: 52px; }
+
+/* Empty and error states */
+.empty {
+  background: #fff;
+  border-radius: 14px;
+  padding: 32px 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+.emptyIcon { font-size: 32px; margin-bottom: 8px; }
+.emptyHint { font-size: 11px; margin-top: 5px; color: #c0c4d0; }
+.linkButton {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  text-decoration: underline;
+}

@@ -1,30 +1,32 @@
 import { useState } from 'react';
 import { getCategoryColor, getCategoryIcon } from '../../shared/categoryStyle.js';
+import { cx } from '../../shared/cx.js';
+import styles from './CategoryBreakdown.module.css';
 
 const CategoryBreakdown = ({ breakdown }) => {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button className={`et-breakdown-btn${open ? ' open' : ''}`} onClick={() => setOpen(o => !o)}>
+      <button className={cx(styles.toggle, open && styles.open)} onClick={() => setOpen(o => !o)}>
         <span>📊 Category Breakdown</span>
-        <span style={{ fontSize: '11px' }}>{open ? '▲' : '▼'}</span>
+        <span className={styles.arrow}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
-        <div className="et-breakdown">
-          <h3>💰 Spending by Category</h3>
-          <div className="et-breakdown-grid">
+        <div className={styles.panel}>
+          <h3 className={styles.heading}>💰 Spending by Category</h3>
+          <div className={styles.grid}>
             {Object.entries(breakdown).map(([cat, data]) => (
               <div
                 key={cat}
-                className="et-breakdown-card"
+                className={styles.card}
                 style={{ background: getCategoryColor(cat) }}
               >
-                <div className="bc-icon">{getCategoryIcon(cat)}</div>
-                <div className="bc-cat">{cat}</div>
-                <div className="bc-amt">₹{data.total.toFixed(0)}</div>
-                <div className="bc-count">{data.count} items</div>
+                <div className={styles.icon}>{getCategoryIcon(cat)}</div>
+                <div className={styles.category}>{cat}</div>
+                <div className={styles.amount}>₹{data.total.toFixed(0)}</div>
+                <div className={styles.count}>{data.count} items</div>
               </div>
             ))}
           </div>

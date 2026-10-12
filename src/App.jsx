@@ -28,9 +28,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="App">
-          <AppContent />
-        </div>
+        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { getCategoryColor, getCategoryIcon } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
 import { formatDisplayDate } from '../../shared/dates.js';
+import { cx } from '../../shared/cx.js';
+import styles from './TransactionCard.module.css';
 
 const SWIPE_OPEN_PX = -60;
 const SWIPE_CLOSE_PX = 20;
@@ -53,89 +55,75 @@ const TransactionCard = ({
   const stop = (handler) => (e) => { e.stopPropagation(); handler(); };
 
   return (
-    <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden' }}>
-      <div className="et-swipe-delete" onClick={stop(onDelete)}>
+    <div className={styles.wrapper}>
+      <div className={styles.swipeDelete} onClick={stop(onDelete)}>
         🗑 Delete
       </div>
       <div
-        className={`et-tx${isExpanded ? ' expanded' : ''}${isDeleting ? ' et-deleting' : ''}`}
-        style={{
-          borderLeftColor: color,
-          transform: `translateX(${isSwiped ? -82 : 0}px)`,
-          transition: 'transform 0.25s ease',
-        }}
+        className={cx(styles.card, isExpanded && styles.expanded, isDeleting && styles.deleting)}
+        style={{ borderLeftColor: color, transform: `translateX(${isSwiped ? -82 : 0}px)` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={handleClick}
       >
         {/* Collapsed row */}
-        <div className="et-tx-row">
-          <div className="et-tx-icon" style={{ background: `${color}18` }}>
+        <div className={styles.row}>
+          <div className={styles.icon} style={{ background: `${color}18` }}>
             {getCategoryIcon(t.category)}
           </div>
-          <div className="et-tx-info">
-            <div className="et-tx-name">{t.expense}</div>
-            <div className="et-tx-date">{displayDate}</div>
+          <div className={styles.info}>
+            <div className={styles.name}>{t.expense}</div>
+            <div className={styles.date}>{displayDate}</div>
           </div>
-          <div className="et-tx-amount">₹{formatAmount(t.amount)}</div>
+          <div className={styles.amount}>₹{formatAmount(t.amount)}</div>
         </div>
 
         {/* Expanded details */}
         {isExpanded && (
-          <div className="et-expanded-inner">
-            <div className="et-expanded-chip">
-              <div className="et-expanded-label">Category</div>
-              <div className="et-expanded-val" style={{ color }}>{t.category}</div>
+          <div className={styles.details}>
+            <div className={styles.chip}>
+              <div className={styles.chipLabel}>Category</div>
+              <div className={styles.chipValue} style={{ color }}>{t.category}</div>
             </div>
-            <div className="et-expanded-chip">
-              <div className="et-expanded-label">Amount</div>
-              <div className="et-expanded-val" style={{ color: '#ef4444', fontFamily: 'DM Mono, monospace' }}>₹{formatAmount(t.amount)}</div>
+            <div className={styles.chip}>
+              <div className={styles.chipLabel}>Amount</div>
+              <div className={cx(styles.chipValue, styles.money)}>₹{formatAmount(t.amount)}</div>
             </div>
-            <div className="et-expanded-chip">
-              <div className="et-expanded-label">Date</div>
-              <div className="et-expanded-val">{displayDate}</div>
+            <div className={styles.chip}>
+              <div className={styles.chipLabel}>Date</div>
+              <div className={styles.chipValue}>{displayDate}</div>
             </div>
-            <div className="et-expanded-chip">
-              <div className="et-expanded-label">Description</div>
-              <div className="et-expanded-val">{t.expense}</div>
+            <div className={styles.chip}>
+              <div className={styles.chipLabel}>Description</div>
+              <div className={styles.chipValue}>{t.expense}</div>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div className={styles.fullWidth}>
               <button
+                className={cx(styles.recurringBtn, isRecurring && styles.active)}
                 onClick={stop(onToggleRecurring)}
-                style={{
-                  width: '100%',
-                  background: isRecurring ? '#ede9ff' : '#f3f4f6',
-                  color: isRecurring ? '#4f46e5' : '#6b7280',
-                  border: isRecurring ? '1.5px solid #c4b5fd' : '1.5px solid transparent',
-                  borderRadius: '9px', padding: '7px 10px',
-                  fontSize: '12px', fontWeight: 700,
-                  fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                  transition: 'all 0.15s',
-                }}
               >
                 🔄 {isRecurring ? 'Remove from recurring' : 'Set as recurring'}
               </button>
             </div>
 
-            <div className="et-expanded-footer">
-              <span className="et-expanded-hint">Tap to collapse</span>
-              <div className="et-action-group">
+            <div className={styles.footer}>
+              <span className={styles.hint}>Tap to collapse</span>
+              <div className={styles.actions}>
                 {isConfirmingDelete ? (
                   <>
-                    <button className="et-cancel-delete-btn" onClick={stop(onCancelDelete)}>
+                    <button className={styles.cancelBtn} onClick={stop(onCancelDelete)}>
                       Cancel
                     </button>
-                    <button className="et-delete-confirm-btn" onClick={stop(onDelete)}>
+                    <button className={styles.confirmBtn} onClick={stop(onDelete)}>
                       🗑 Sure?
                     </button>
                   </>
                 ) : (
-                  <button className="et-delete-btn" onClick={stop(onRequestDelete)}>
+                  <button className={styles.deleteBtn} onClick={stop(onRequestDelete)}>
                     🗑 Delete
                   </button>
                 )}
-                <button className="et-edit-btn" onClick={stop(onEdit)}>
+                <button className={styles.editBtn} onClick={stop(onEdit)}>
                   ✏️ Edit
                 </button>
               </div>

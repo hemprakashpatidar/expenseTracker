@@ -1,14 +1,16 @@
+import styles from './AppHeader.module.css';
+
 const AppHeader = ({ userName, onLogout }) => (
-  <div className="et-header">
-    <div className="et-header-left">
-      <h1>💰 Expense Tracker</h1>
-      <p>Hi, {userName || 'there'} 👋</p>
+  <div className={styles.header}>
+    <div>
+      <h1 className={styles.title}>💰 Expense Tracker</h1>
+      <p className={styles.greeting}>Hi, {userName || 'there'} 👋</p>
     </div>
-    <div className="et-header-right">
-      <div className="et-avatar">
+    <div className={styles.right}>
+      <div className={styles.avatar}>
         {(userName?.[0] || '?').toUpperCase()}
       </div>
-      <button className="et-logout" onClick={onLogout}>Logout</button>
+      <button className={styles.logout} onClick={onLogout}>Logout</button>
     </div>
   </div>
 );

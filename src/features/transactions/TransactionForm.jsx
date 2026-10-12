@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getCategoryIcon } from '../../shared/categoryStyle.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
 import { todayISO } from '../../shared/dates.js';
+import { cx } from '../../shared/cx.js';
 import styles from './TransactionForm.module.css';
 
 const CUSTOM = 'Other (custom)';
@@ -30,8 +31,6 @@ const initialValues = (transaction) => {
 };
 
 const resolve = (selected, custom) => selected === CUSTOM ? (custom.trim() || 'Other') : selected;
-
-const cx = (...classes) => classes.filter(Boolean).join(' ');
 
 const TEXT = {
   add: { title: <><span>💸</span> Add Transaction</>, submit: <>＋ Add Transaction</>, busy: 'Adding...', failed: 'Failed to add transaction. Please try again.' },

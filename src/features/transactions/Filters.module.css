@@ -1,0 +1,97 @@
+/* Filter row: toggle + active chips */
+.row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.row::-webkit-scrollbar { display: none; }
+.toggle {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s;
+}
+.toggle.hasFilters {
+  border-color: #4f46e5;
+  color: #4f46e5;
+  background: #ede9ff;
+}
+.chip {
+  background: #ede9ff;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+.chip:hover { background: #ddd6fe; }
+.chipX { font-size: 13px; opacity: 0.6; line-height: 1; }
+
+/* Collapsible panel */
+.panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.section { display: flex; flex-direction: column; gap: 6px; }
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.options {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+}
+.options::-webkit-scrollbar { display: none; }
+.option {
+  background: #fff;
+  border: 1.5px solid transparent;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.option.active {
+  background: #ede9ff;
+  border-color: #4f46e5;
+  color: #4f46e5;
+}

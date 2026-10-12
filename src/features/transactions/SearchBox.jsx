@@ -1,7 +1,10 @@
+import styles from './SearchBox.module.css';
+
 const SearchBox = ({ value, onChange }) => (
-  <div className="et-search">
-    <span className="et-search-icon">🔍</span>
+  <div className={styles.search}>
+    <span className={styles.icon}>🔍</span>
     <input
+      className={styles.input}
       type="text"
       placeholder="Search..."
       value={value}

@@ -1,4 +1,5 @@
 import { MONTH_NAMES } from '../../shared/constants.js';
+import styles from './MonthPicker.module.css';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -10,10 +11,10 @@ const buildOptions = () => {
 };
 
 const MonthPicker = ({ month, year, onChange }) => (
-  <div className="et-month-wrap">
-    <span className="et-month-icon">📅</span>
+  <div className={styles.wrap}>
+    <span className={styles.icon}>📅</span>
     <select
-      className="et-month-select"
+      className={styles.select}
       value={`${year}-${pad(month)}`}
       onChange={(e) => {
         const [y, m] = e.target.value.split('-');
