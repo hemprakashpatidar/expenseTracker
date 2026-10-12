@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getCategoryIcon } from '../utils/categoryUtils.js';
-import { getAuthData, apiPost } from '../utils/api.js';
+import { apiPost } from '../utils/api.js';
 
 const AddTransaction = ({ onClose, onTransactionAdded }) => {
   const [formData, setFormData] = useState({
@@ -54,11 +54,7 @@ const AddTransaction = ({ onClose, onTransactionAdded }) => {
     }
 
     try {
-      const userData = getAuthData();
       const response = await apiPost('/api/transaction', {
-        userName: userData?.userName || '',
-        uuid: userData?.uuid || '',
-        isMe: userData?.isMe || false,
         expense: formData.expense.trim(),
         amount,
         date: formData.date,

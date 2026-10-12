@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { AUTH_STORAGE_KEY, AUTH_EXPIRED_EVENT, getAuthData, isTokenExpired } from '../utils/api.js';
 
 const AuthContext = createContext();
 
@@ -14,22 +15,28 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing session on app load
+  const logout = useCallback(() => {
+    setIsAuthenticated(false);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }, []);
+
+  // Check for existing session on app load (sessions saved before token auth have no token)
   useEffect(() => {
-    const savedAuth = localStorage.getItem('expense_tracker_auth');
-    if (savedAuth) {
-      try {
-        const userData = JSON.parse(savedAuth);
-        if (userData && userData.uuid) {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Error parsing saved auth data:', error);
-        localStorage.removeItem('expense_tracker_auth');
-      }
+    const savedAuth = getAuthData();
+    if (savedAuth?.token && !isTokenExpired(savedAuth.token)) {
+      setIsAuthenticated(true);
+    } else if (savedAuth) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
     }
     setLoading(false);
   }, []);
+
+  // Any API call that comes back 401 ends the session
+  useEffect(() => {
+    window.addEventListener(AUTH_EXPIRED_EVENT, logout);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, logout);
+  }, [logout]);
+
   const login = async (username, password) => {
     try {
       const apiPath = process.env.REACT_APP_API_PATH;
@@ -42,17 +49,15 @@ export const AuthProvider = ({ children }) => {
       });
       const loginResponse = await response.json();
       if (response.ok) {
-        setIsAuthenticated(true);
-        // Store user data as JSON string in localStorage
-        localStorage.setItem('expense_tracker_auth', JSON.stringify({
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+          token: loginResponse.token,
           userName: loginResponse.user.userName,
-          uuid: loginResponse.user.uuid,
           isMe: loginResponse.user.isMe
         }));
+        setIsAuthenticated(true);
         return { success: true, user: loginResponse.user };
       } else {
-        const error = await response.json();
-        return { success: false, error: error.message };
+        return { success: false, error: loginResponse.message };
       }
     } catch (error) {
       return { success: false, error: 'Login failed. Please try again.' };
@@ -83,11 +88,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('expense_tracker_auth');
-  };
-
   const value = {
     isAuthenticated,
     login,
@@ -101,4 +101,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

@@ -51,12 +51,10 @@ const ExpenseTable = () => {
     setSwipedCard(null);
     setDeletingIndex(index);
     try {
-      const userData = getAuthData();
-      await apiPost('/api/delete-transaction', {
+      const response = await apiPost('/api/delete-transaction', {
         pageId: row.id,
-        userName: userData?.userName || '',
-        uuid: userData?.uuid || '',
       });
+      if (!response.ok) throw new Error(`Delete failed with status ${response.status}`);
       setOriginalData(prev => prev.filter((_, i) => i !== index));
       setExpandedCard(null);
     } catch (err) {
@@ -105,15 +103,11 @@ const ExpenseTable = () => {
   const handleConfirmSuggestion = async (suggestion) => {
     setAddingRecurringId(suggestion.id);
     try {
-      const userData = getAuthData();
       const now = new Date();
       const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === (now.getMonth() + 1);
       const day = isCurrentMonth ? now.getDate() : 1;
       const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const response = await apiPost('/api/transaction', {
-        userName: userData?.userName || '',
-        uuid: userData?.uuid || '',
-        isMe: userData?.isMe || false,
         expense: suggestion.expense,
         amount: suggestion.amount,
         date: dateStr,
@@ -141,7 +135,7 @@ const ExpenseTable = () => {
 
     setIsLoading(true);
     const userData = getAuthData();
-    const base = { userName: userData?.userName || '', uuid: userData?.uuid || '', isMe: userData?.isMe || false, month: selectedMonth, year: selectedYear };
+    const base = { month: selectedMonth, year: selectedYear };
     const apiCalls = [
       apiPost('/api/notion', { ...base, type: 'default' }).then(r => r.json()),
     ];

@@ -73,7 +73,7 @@ const Register = ({ onSwitchToLogin }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: sanitizeInput(value)
+      [name]: name === 'username' ? sanitizeInput(value) : value
     }));
   };
 

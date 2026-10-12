@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { getAuthData, apiPost } from '../utils/api.js';
+import { apiPost } from '../utils/api.js';
 import { getCategoryIcon } from '../utils/categoryUtils.js';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -257,16 +257,12 @@ const ImportTransactions = ({ onClose, onImported }) => {
   const handleImport = async () => {
     if (selectedRows.length === 0) return;
     setStep('importing');
-    const userData = getAuthData();
     let done = 0, failed = 0;
     setProgress({ done: 0, total: selectedRows.length, failed: 0 });
 
     for (const row of selectedRows) {
       try {
         const resp = await apiPost('/api/transaction', {
-          userName: userData?.userName || '',
-          uuid: userData?.uuid || '',
-          isMe: userData?.isMe || false,
           expense: row.expense,
           amount: parseFloat(row.amount) || 0,
           date: row.date,
