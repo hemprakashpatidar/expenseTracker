@@ -1,23 +1,41 @@
 .search {
-  background: #fff;
+  background: var(--surface);
   border-radius: 12px;
-  padding: 8px 11px;
+  padding: 6px 8px 6px 12px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   gap: 7px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-card);
   flex: 1;
   min-width: 0;
+  border: 1.5px solid transparent;
 }
+/* The input itself has no outline, so the box shows focus */
+.search:focus-within { border-color: var(--accent); }
 .input {
   flex: 1;
   border: none;
   outline: none;
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  color: #1a1a2e;
+  /* 16px stops iOS Safari zooming the page on focus */
+  font-size: 16px;
+  color: var(--text);
   background: transparent;
   min-width: 0;
 }
-.input::placeholder { color: #a0a4b8; }
-.icon { color: #a0a4b8; font-size: 12px; flex-shrink: 0; }
+.input::placeholder { color: var(--placeholder); }
+.icon { color: var(--text-muted); font-size: 12px; flex-shrink: 0; }
+.input::-webkit-search-cancel-button { display: none; }
+.clear {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.clear:hover { background: var(--surface-active); }

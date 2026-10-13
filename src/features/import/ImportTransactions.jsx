@@ -101,10 +101,10 @@ const ImportTransactions = ({ onClose, onImported }) => {
         <div className={styles.handle} />
         <div className={styles.header}>
           <div className={styles.title}>
-            📥 Import Transactions
+            <span aria-hidden="true">📥</span> Import transactions
           </div>
           {step !== 'importing' && (
-            <button className={styles.close} onClick={onClose}>✕</button>
+            <button className={styles.close} onClick={onClose} aria-label="Close">✕</button>
           )}
         </div>
 
@@ -114,12 +114,18 @@ const ImportTransactions = ({ onClose, onImported }) => {
             <>
               <div
                 className={cx(styles.dropzone, dragOver && styles.drag)}
+                role="button"
+                tabIndex={0}
+                aria-label="Choose a CSV or PDF bank statement"
                 onClick={() => fileRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileRef.current?.click(); }
+                }}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
               >
-                <div className={styles.dropzoneIcon}>{parsing ? '⏳' : '📂'}</div>
+                <div className={styles.dropzoneIcon} aria-hidden="true">{parsing ? '⏳' : '📂'}</div>
                 <div className={styles.dropzoneTitle}>
                   {parsing ? 'Parsing file…' : 'Drop your bank statement here'}
                 </div>
@@ -129,8 +135,8 @@ const ImportTransactions = ({ onClose, onImported }) => {
                   </div>
                 )}
                 <div className={styles.formats}>
-                  <div className={styles.fmtBadge}>📄 CSV</div>
-                  <div className={styles.fmtBadge}>📑 PDF</div>
+                  <div className={styles.fmtBadge}><span aria-hidden="true">📄</span> CSV</div>
+                  <div className={styles.fmtBadge}><span aria-hidden="true">📑</span> PDF</div>
                 </div>
               </div>
               <input
@@ -140,10 +146,10 @@ const ImportTransactions = ({ onClose, onImported }) => {
                 style={{ display: 'none' }}
                 onChange={(e) => handleFile(e.target.files[0])}
               />
-              {parseError && <div className={styles.error}>{parseError}</div>}
-              <div style={{ fontSize: '12px', color: '#9ca3af', lineHeight: 1.6 }}>
-                <strong style={{ color: '#6b7280' }}>CSV:</strong> Supports standard bank statement exports. Columns for date, description, and debit/amount are auto-detected.<br />
-                <strong style={{ color: '#6b7280' }}>PDF:</strong> Text-based PDFs only (not scanned images). Results depend on the bank's PDF format.
+              {parseError && <div className={styles.error} role="alert">{parseError}</div>}
+              <div className={styles.help}>
+                <strong>CSV:</strong> Supports standard bank statement exports. Columns for date, description, and debit/amount are auto-detected.<br />
+                <strong>PDF:</strong> Text-based PDFs only (not scanned images). Results depend on the bank's PDF format.
               </div>
             </>
           )}
@@ -158,82 +164,74 @@ const ImportTransactions = ({ onClose, onImported }) => {
                 </button>
               </div>
 
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: 28 }}></th>
-                      <th>Description</th>
-                      <th style={{ width: 80 }}>Date</th>
-                      <th style={{ width: 80 }}>Amount</th>
-                      <th style={{ width: 110 }}>Category</th>
-                      <th style={{ width: 100 }}>Payment</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, i) => (
-                      <tr key={i} className={row.selected ? undefined : styles.deselected}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={row.selected}
-                            onChange={() => toggleRow(i)}
-                            style={{ cursor: 'pointer', accentColor: '#4f46e5' }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className={styles.tdInput}
-                            value={row.expense}
-                            onChange={(e) => updateRow(i, 'expense', e.target.value)}
-                            style={{ minWidth: 100 }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className={styles.tdInput}
-                            type="date"
-                            value={row.date}
-                            onChange={(e) => updateRow(i, 'date', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className={styles.tdInput}
-                            type="number"
-                            value={row.amount}
-                            min="0"
-                            step="0.01"
-                            onChange={(e) => updateRow(i, 'amount', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <select
-                            className={styles.tdSelect}
-                            value={row.category}
-                            onChange={(e) => updateRow(i, 'category', e.target.value)}
-                          >
-                            {CATEGORIES.map(c => (
-                              <option key={c} value={c}>{getCategoryIcon(c)} {c}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <select
-                            className={styles.tdSelect}
-                            value={row.paymentMethod}
-                            onChange={(e) => updateRow(i, 'paymentMethod', e.target.value)}
-                          >
-                            {PAYMENT_METHODS.map(p => (
-                              <option key={p} value={p}>{p}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ul className={styles.reviewList}>
+                {rows.map((row, i) => (
+                  <li key={i} className={cx(styles.reviewCard, !row.selected && styles.deselected)}>
+                    <div className={styles.reviewTop}>
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={row.selected}
+                        onChange={() => toggleRow(i)}
+                        aria-label={`Import "${row.expense}"`}
+                      />
+                      <input
+                        className={cx(styles.tdInput, styles.descInput)}
+                        aria-label="Description"
+                        value={row.expense}
+                        onChange={(e) => updateRow(i, 'expense', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.reviewGrid}>
+                      <label className={styles.fieldLabel}>
+                        Date
+                        <input
+                          className={styles.tdInput}
+                          type="date"
+                          value={row.date}
+                          onChange={(e) => updateRow(i, 'date', e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.fieldLabel}>
+                        Amount (₹)
+                        <input
+                          className={styles.tdInput}
+                          type="number"
+                          inputMode="decimal"
+                          value={row.amount}
+                          min="0"
+                          step="0.01"
+                          onChange={(e) => updateRow(i, 'amount', e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.fieldLabel}>
+                        Category
+                        <select
+                          className={styles.tdSelect}
+                          value={row.category}
+                          onChange={(e) => updateRow(i, 'category', e.target.value)}
+                        >
+                          {CATEGORIES.map(c => (
+                            <option key={c} value={c}>{getCategoryIcon(c)} {c}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.fieldLabel}>
+                        Payment
+                        <select
+                          className={styles.tdSelect}
+                          value={row.paymentMethod}
+                          onChange={(e) => updateRow(i, 'paymentMethod', e.target.value)}
+                        >
+                          {PAYMENT_METHODS.map(p => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </li>
+                ))}
+              </ul>
 
               <button
                 className={styles.importBtn}
@@ -265,7 +263,7 @@ const ImportTransactions = ({ onClose, onImported }) => {
           {/* ── DONE STEP ── */}
           {step === 'done' && (
             <div className={styles.done}>
-              <div className={styles.doneIcon}>{progress.failed === 0 ? '🎉' : '⚠️'}</div>
+              <div className={styles.doneIcon} aria-hidden="true">{progress.failed === 0 ? '🎉' : '⚠️'}</div>
               <div className={styles.doneTitle}>
                 {progress.done} transaction{progress.done !== 1 ? 's' : ''} imported!
               </div>

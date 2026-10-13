@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   listTransactions,
@@ -43,6 +44,19 @@ export const useMonthTransactions = (month, year) => useQuery({
   queryFn: () => listTransactions(month, year),
   select: selectRows,
 });
+
+// This calendar month and the one before, whichever month is on screen. Usually both are
+// already cached from browsing, so this rarely costs a request.
+export const useLatestTransactions = () => {
+  const now = new Date();
+  const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const current = useMonthTransactions(now.getMonth() + 1, now.getFullYear());
+  const before = useMonthTransactions(previous.getMonth() + 1, previous.getFullYear());
+  return useMemo(
+    () => [...(current.data || []), ...(before.data || [])],
+    [current.data, before.data]
+  );
+};
 
 // New rows get their id from the server, so lists are refetched rather than patched
 export const useInvalidateTransactions = () => {

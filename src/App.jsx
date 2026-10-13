@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { createQueryClient } from './queryClient.js';
+import { ThemeProvider } from './shared/ThemeProvider.jsx';
 import { AuthProvider } from './features/auth/AuthContext.jsx';
 import { useAuth } from './features/auth/useAuth.js';
 import Login from './features/auth/Login.jsx';
@@ -33,13 +34,15 @@ export const AppRoutes = () => (
 function App() {
   const [queryClient] = useState(createQueryClient);
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

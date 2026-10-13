@@ -27,21 +27,22 @@ const Login = () => {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>🔐 Login</h1>
-          <p className={styles.subtitle}>Access your expense tracker</p>
+        <div className={styles.brand}>
+          <div className={styles.logo} aria-hidden="true">💰</div>
+          <h1 className={styles.title}>Welcome back</h1>
+          <p className={styles.subtitle}>Sign in to see your expenses</p>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           {error && (
-            <div className={styles.error}>
-              ⚠️ {error}
+            <div className={styles.error} role="alert">
+              {error}
             </div>
           )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="username">
-              👤 Username
+              Username
             </label>
             <input
               id="username"
@@ -50,6 +51,7 @@ const Login = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
+              autoFocus
               required
               disabled={loading}
             />
@@ -57,7 +59,7 @@ const Login = () => {
 
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="password">
-              🔑 Password
+              Password
             </label>
             <input
               id="password"
@@ -73,7 +75,7 @@ const Login = () => {
 
           <button type="submit" className={styles.button} disabled={loading}>
             {loading && <span className={styles.spinner}></span>}
-            {loading ? 'Signing in...' : '🚀 Sign In'}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
 
           <div className={styles.switchRow}>

@@ -33,3 +33,15 @@ export const totalByCategory = (transactions) => transactions.reduce((acc, t) =>
   acc[t.category].count += 1;
   return acc;
 }, {});
+
+// Consecutive rows with the same date become one group; call on rows already sorted by date
+export const groupByDay = (transactions) => transactions.reduce((groups, t) => {
+  const last = groups[groups.length - 1];
+  if (last && last.date === t.date) {
+    last.items.push(t);
+    last.total += t.amount;
+  } else {
+    groups.push({ date: t.date, items: [t], total: t.amount });
+  }
+  return groups;
+}, []);

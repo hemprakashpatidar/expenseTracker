@@ -1,4 +1,8 @@
-// Function to format amount - only show decimals if they exist
+const wholeRupees = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+const withPaise = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Indian digit grouping (1,23,456); paise only when the amount has them
 export const formatAmount = (amount) => {
-  return amount % 1 === 0 ? amount.toString() : amount.toFixed(2);
+  const value = Number(amount) || 0;
+  return (Number.isInteger(value) ? wholeRupees : withPaise).format(value);
 };

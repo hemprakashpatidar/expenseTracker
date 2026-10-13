@@ -1,91 +1,113 @@
+/* Login and Register share the main app's look: grey page, white card, indigo actions */
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--page-background);
+  background-color: var(--page);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 24px 16px;
+  font-family: 'DM Sans', sans-serif;
 }
 .card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--surface);
   border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   width: 100%;
   max-width: 400px;
+  padding: 28px 24px 24px;
 }
-.card.wide { max-width: 500px; }
-.header {
-  background: linear-gradient(135deg, #2C3E50 0%, #3498DB 100%);
-  color: white;
-  padding: 2rem;
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  margin-bottom: 22px;
+}
+.logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 12px;
 }
 .title {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
 }
 .subtitle {
-  margin: 0;
-  font-size: 0.9rem;
-  opacity: 0.9;
-  font-weight: 300;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
 }
-.form { padding: 2rem; }
-.inputGroup { margin-bottom: 1.5rem; }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-secondary);
 }
 .input {
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 2px solid #e9ecef;
-  font-size: 1rem;
+  min-height: 46px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-muted);
+  font-family: 'DM Sans', sans-serif;
+  /* 16px stops iOS Safari zooming the page on focus */
+  font-size: 16px;
+  color: var(--text);
   outline: none;
-  transition: all 0.3s ease;
-  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
+.input::placeholder { color: var(--placeholder); }
 .input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 /* Password field with a show/hide button inside it */
 .passwordContainer { position: relative; width: 100%; }
-.passwordContainer .input { padding-right: 50px; }
+.passwordContainer .input { padding-right: 52px; }
 .togglePassword {
   position: absolute;
-  right: 12px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  width: 38px;
+  height: 38px;
   border: none;
+  border-radius: 10px;
+  background: none;
   cursor: pointer;
-  font-size: 1.2rem;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
 }
+.togglePassword:hover { background: var(--border-subtle); }
 
-.passwordStrength { margin-top: 8px; }
+.passwordStrength { margin-top: 2px; }
 .strengthBar {
   width: 100%;
   height: 4px;
-  background-color: #e9ecef;
+  background-color: var(--surface-active);
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 4px;
@@ -95,64 +117,63 @@
   transition: width 0.3s ease, background-color 0.3s ease;
 }
 .strengthText {
-  font-size: 0.8rem;
+  font-size: 12px;
   font-weight: 600;
   text-align: right;
 }
 
 .button {
   width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 12px;
   border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 12px;
+  background: var(--accent-solid);
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
 }
-.button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
+.button:hover:not(:disabled) { background: var(--accent-solid-hover); transform: translateY(-1px); }
 .button:disabled { opacity: 0.7; cursor: not-allowed; }
 
 .error {
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  text-align: center;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner {
   display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 50%;
   border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
+  animation: spin 0.8s linear infinite;
   margin-right: 8px;
 }
 
 .switchRow {
   text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.9rem;
-  color: #6c757d;
+  margin-top: 18px;
+  font-size: 14px;
+  color: var(--text-muted);
 }
 .switchButton {
-  background: none;
-  border: none;
-  color: #667eea;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--accent-text);
+  font-weight: 700;
+  text-decoration: none;
 }
+.switchButton:hover { text-decoration: underline; }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from './useAuth.js';
-import { cx } from '../../shared/cx.js';
 import styles from './AuthForm.module.css';
 
 const Register = () => {
@@ -164,22 +163,23 @@ const Register = () => {
 
   return (
     <div className={styles.container}>
-      <div className={cx(styles.card, styles.wide)}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>📝 Register</h1>
-          <p className={styles.subtitle}>Create your expense tracker account</p>
+      <div className={styles.card}>
+        <div className={styles.brand}>
+          <div className={styles.logo} aria-hidden="true">💰</div>
+          <h1 className={styles.title}>Create your account</h1>
+          <p className={styles.subtitle}>Start tracking where your money goes</p>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           {error && (
-            <div className={styles.error}>
-              ⚠️ {error}
+            <div className={styles.error} role="alert">
+              {error}
             </div>
           )}
 
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="username">
-              👤 Username *
+              Username
             </label>
             <input
               id="username"
@@ -197,7 +197,7 @@ const Register = () => {
 
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="password">
-              🔑 Password *
+              Password
             </label>
             {passwordField('password', 'password', formData.password, showPassword, setShowPassword, 'Create a strong password', 'new-password')}
 
@@ -222,14 +222,14 @@ const Register = () => {
 
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="confirmPassword">
-              🔑 Confirm Password *
+              Confirm password
             </label>
             {passwordField('confirmPassword', 'confirm password', formData.confirmPassword, showConfirmPassword, setShowConfirmPassword, 'Confirm your password', 'new-password')}
           </div>
 
           <button type="submit" className={styles.button} disabled={loading}>
             {loading && <span className={styles.spinner}></span>}
-            {loading ? 'Creating Account...' : '🚀 Create Account'}
+            {loading ? 'Creating account…' : 'Create account'}
           </button>
 
           <div className={styles.switchRow}>
