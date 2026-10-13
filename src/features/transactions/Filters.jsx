@@ -1,70 +1,53 @@
 import { useState } from 'react';
-import { getCategoryIcon } from '../../shared/categoryStyle.js';
+import { getCategoryIcon, getCategoryLabel } from '../../shared/categoryStyle.js';
 import { cx } from '../../shared/cx.js';
 import styles from './Filters.module.css';
 
+// Category chips are always visible; payment method sits behind its own chip
 const Filters = ({ categories, paymentMethods, category, paymentMethod, onCategoryChange, onPaymentMethodChange }) => {
-  const [showPanel, setShowPanel] = useState(false);
-  const activeCount = (category !== 'All' ? 1 : 0) + (paymentMethod !== 'All' ? 1 : 0);
+  const [showPayments, setShowPayments] = useState(false);
+  const hasPaymentChoice = paymentMethods.length > 2; // 'All' plus at least two methods
 
   return (
-    <>
-      {/* Filter row: toggle button + active chips */}
-      <div className={styles.row}>
-        <button
-          className={cx(styles.toggle, activeCount > 0 && styles.hasFilters)}
-          onClick={() => setShowPanel(open => !open)}
-        >
-          ⚙ Filters{activeCount > 0 ? ` · ${activeCount}` : ''}
-        </button>
-        {category !== 'All' && (
-          <button className={styles.chip} onClick={() => onCategoryChange('All')}>
-            {getCategoryIcon(category)} {category} <span className={styles.chipX}>×</span>
+    <div className={styles.wrap}>
+      <div className={styles.row} role="group" aria-label="Filter by category">
+        {categories.map(cat => (
+          <button
+            key={cat}
+            className={cx(styles.chip, category === cat && styles.active)}
+            onClick={() => onCategoryChange(cat)}
+            aria-pressed={category === cat}
+            title={cat === 'All' ? 'All categories' : cat}
+          >
+            {cat === 'All' ? 'All' : <><span aria-hidden="true">{getCategoryIcon(cat)}</span> {getCategoryLabel(cat)}</>}
           </button>
-        )}
-        {paymentMethod !== 'All' && (
-          <button className={styles.chip} onClick={() => onPaymentMethodChange('All')}>
-            💳 {paymentMethod} <span className={styles.chipX}>×</span>
+        ))}
+        {hasPaymentChoice && (
+          <button
+            className={cx(styles.chip, styles.paymentToggle, paymentMethod !== 'All' && styles.active)}
+            onClick={() => setShowPayments(open => !open)}
+            aria-expanded={showPayments}
+          >
+            <span aria-hidden="true">💳</span> {paymentMethod === 'All' ? 'Payment' : paymentMethod} <span aria-hidden="true">▾</span>
           </button>
         )}
       </div>
 
-      {/* Collapsible filter panel */}
-      {showPanel && (
-        <div className={styles.panel}>
-          <div className={styles.section}>
-            <div className={styles.sectionLabel}>Category</div>
-            <div className={styles.options}>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  className={cx(styles.option, category === cat && styles.active)}
-                  onClick={() => { onCategoryChange(cat); setShowPanel(false); }}
-                >
-                  {cat === 'All' ? '🗂' : getCategoryIcon(cat)} {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-          {paymentMethods.length > 1 && (
-            <div className={styles.section}>
-              <div className={styles.sectionLabel}>Payment Method</div>
-              <div className={styles.options}>
-                {paymentMethods.map(pm => (
-                  <button
-                    key={pm}
-                    className={cx(styles.option, paymentMethod === pm && styles.active)}
-                    onClick={() => { onPaymentMethodChange(pm); setShowPanel(false); }}
-                  >
-                    {pm === 'All' ? '💳' : pm}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      {hasPaymentChoice && showPayments && (
+        <div className={styles.row} role="group" aria-label="Filter by payment method">
+          {paymentMethods.map(pm => (
+            <button
+              key={pm}
+              className={cx(styles.chip, paymentMethod === pm && styles.active)}
+              onClick={() => { onPaymentMethodChange(pm); setShowPayments(false); }}
+              aria-pressed={paymentMethod === pm}
+            >
+              {pm === 'All' ? 'All payments' : pm}
+            </button>
+          ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

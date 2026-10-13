@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 15, 30, 0.55);
+  background: var(--overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;
@@ -15,7 +15,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .modal {
-  background: #fff;
+  background: var(--surface);
   border-radius: 24px 24px 0 0;
   width: 100%;
   max-width: 480px;
@@ -29,7 +29,7 @@
 .handle {
   width: 36px;
   height: 4px;
-  background: #e2e4ea;
+  background: var(--border);
   border-radius: 2px;
   margin: 12px auto 0;
 }
@@ -40,21 +40,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px 12px;
-  border-bottom: 1px solid #f0f1f5;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .edit .header { padding-bottom: 14px; }
 .headerTitle {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 7px;
 }
 .titlePill {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border: 1.5px solid #ddd6fe;
+  background: var(--edit-soft);
+  color: var(--edit-accent);
+  border: 1.5px solid var(--accent-soft-hover);
   border-radius: 20px;
   padding: 5px 14px;
   font-size: 14px;
@@ -66,11 +66,11 @@
 .close {
   width: 30px;
   height: 30px;
-  background: #f3f4f6;
+  background: var(--surface-hover);
   border: none;
   border-radius: 8px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -78,7 +78,7 @@
   transition: background 0.15s;
   font-family: 'DM Sans', sans-serif;
 }
-.close:hover { background: #e5e7eb; color: #1a1a2e; }
+.close:hover { background: var(--surface-active); color: var(--text); }
 
 /* body */
 .body {
@@ -90,9 +90,9 @@
 
 /* error */
 .error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
   border-radius: 10px;
   padding: 9px 12px;
   font-size: 12px;
@@ -107,110 +107,186 @@
 .label {
   font-size: 11px;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .input {
-  background: #f8f9fb;
+  background: var(--surface-muted);
   border: 1.5px solid transparent;
   border-radius: 11px;
   padding: 10px 12px;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a2e;
+  color: var(--text);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
   box-sizing: border-box;
 }
 .input:focus {
-  border-color: #4f46e5;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
-.input::placeholder { color: #c0c4d0; }
+.input::placeholder { color: var(--placeholder); }
 
-/* amount row */
-.amountRow { display: flex; gap: 8px; }
-.amountWrap {
-  flex: 1;
-  position: relative;
+/* Recent expenses: one tap fills the whole form */
+.recent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.currency {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  font-weight: 700;
-  color: #4f46e5;
+.recentRow {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 1px;
+}
+.recentRow::-webkit-scrollbar { display: none; }
+.recentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  max-width: 190px;
+  min-height: 36px;
+  padding: 6px 12px;
+  background: var(--surface-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.recentChip:hover:not(:disabled) { border-color: var(--accent-soft-border); background: var(--accent-soft); }
+.recentName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recentAmount {
   font-family: 'DM Mono', monospace;
-  pointer-events: none;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Amount: the first and largest field */
+.amountHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0 2px;
+}
+.amountWrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  border-bottom: 2px solid var(--border);
+  padding: 2px 0 6px;
+  transition: border-color 0.15s;
+}
+.amountWrap:focus-within { border-color: var(--accent); }
+.currency {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--accent-text);
+  font-family: 'DM Mono', monospace;
 }
 .amountInput {
-  background: #f8f9fb;
-  border: 1.5px solid transparent;
-  border-radius: 11px;
-  padding: 10px 12px 10px 26px;
+  /* Grows with the digits typed where field-sizing is supported; 6ch otherwise */
+  width: 6ch;
+  field-sizing: content;
+  min-width: 2ch;
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
   font-family: 'DM Mono', monospace;
-  font-size: 18px;
+  font-size: 38px;
   font-weight: 600;
-  color: #1a1a2e;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  width: 100%;
-  box-sizing: border-box;
+  color: var(--text);
+  text-align: center;
+  padding: 0;
 }
-.amountInput:focus {
-  border-color: #4f46e5;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-.amountInput::placeholder { color: #c0c4d0; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+.amountInput::placeholder { color: var(--disabled); }
 
-/* styled select */
-.selectWrap {
-  position: relative;
+/* Category and payment chip rows, date chips */
+.fieldset {
+  border: none;
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fieldset > legend { margin-bottom: 4px; }
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* One line that scrolls sideways; the padding keeps focus rings from being clipped */
+.chipRow {
+  position: relative; /* chips' offsetLeft is measured from here when scrolling the selection into view */
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 3px 2px;
+  margin: -3px -2px;
+  scroll-padding: 0 16px;
+}
+.chipRow::-webkit-scrollbar { display: none; }
+.chipRow .chip { flex-shrink: 0; white-space: nowrap; }
+.chip {
+  display: inline-flex;
   align-items: center;
-}
-.selectIcon {
-  position: absolute;
-  left: 12px;
-  font-size: 16px;
-  pointer-events: none;
-  z-index: 1;
-}
-.selectChevron {
-  position: absolute;
-  right: 12px;
-  font-size: 11px;
-  color: #9ca3af;
-  pointer-events: none;
-}
-.styledSelect {
-  width: 100%;
-  background: #f8f9fb;
+  gap: 4px;
+  min-height: 34px;
+  padding: 6px 12px;
+  background: var(--surface-muted);
   border: 1.5px solid transparent;
-  border-radius: 11px;
-  padding: 10px 34px 10px 36px;
+  border-radius: 999px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #1a1a2e;
-  outline: none;
+  color: var(--text-secondary);
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
-.styledSelect:focus {
-  border-color: #4f46e5;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+.chip:hover:not(:disabled) { border-color: var(--accent-soft-border); }
+.chip.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-text);
 }
+.chip:focus-visible,
+.pickChip:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* "Pick date": a transparent native date input covers the chip */
+.pickChip { position: relative; }
+.pickInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
 .customInput {
   margin-top: 7px;
   animation: slideUp 0.18s ease;
@@ -224,21 +300,21 @@
 }
 .cancel {
   flex: 1;
-  background: #f3f4f6;
+  background: var(--surface-hover);
   border: none;
   border-radius: 12px;
   padding: 12px;
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--text-muted);
   cursor: pointer;
   transition: background 0.15s;
 }
-.cancel:hover { background: #e5e7eb; }
+.cancel:hover { background: var(--surface-active); }
 .submit {
   flex: 2;
-  background: #4f46e5;
+  background: var(--accent-solid);
   border: none;
   border-radius: 12px;
   padding: 12px;
@@ -264,25 +340,17 @@
   animation: spin 0.7s linear infinite;
 }
 
-/* ── Edit mode: amber focus on text/select, purple amount and submit ── */
-.edit .input:focus,
-.edit .styledSelect:focus {
+/* ── Edit mode: amber focus on text fields, purple amount and submit ── */
+.edit .input:focus {
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
 }
-.edit .input.dateInput:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-.edit .currency { color: #7c3aed; }
-.edit .amountInput:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-}
-.edit .submit { background: #7c3aed; }
+.edit .currency { color: var(--edit-accent); }
+.edit .amountWrap:focus-within { border-color: var(--edit-accent); }
+.edit .submit { background: var(--edit-accent); }
 
 /* Fields that differ from the saved transaction (wins over focus styles, as before) */
 .edit .changed {
-  border-color: #7c3aed !important;
-  background: #f5f3ff !important;
+  border-color: var(--edit-accent) !important;
+  background: var(--edit-soft) !important;
 }

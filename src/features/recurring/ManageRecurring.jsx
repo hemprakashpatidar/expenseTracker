@@ -18,8 +18,8 @@ const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.handle} />
         <div className={styles.header}>
-          <div className={styles.title}>🔄 Recurring Templates</div>
-          <button className={styles.close} onClick={onClose}>✕</button>
+          <div className={styles.title}><span aria-hidden="true">🔄</span> Recurring templates</div>
+          <button className={styles.close} onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         <div className={styles.body}>
@@ -30,7 +30,7 @@ const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
             </div>
           ) : templates.map(t => (
             <div key={t.id} className={styles.item}>
-              <div className={styles.icon} style={{ background: `${getCategoryColor(t.category)}18` }}>
+              <div className={styles.icon} style={{ background: `${getCategoryColor(t.category)}18` }} aria-hidden="true">
                 {getCategoryIcon(t.category)}
               </div>
               <div className={styles.info}>
@@ -47,7 +47,7 @@ const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
                   <button className={styles.confirmBtn} onClick={() => handleDelete(t.id)}>Sure?</button>
                 </div>
               ) : (
-                <button className={styles.delBtn} onClick={() => handleDelete(t.id)}>🗑</button>
+                <button className={styles.delBtn} onClick={() => handleDelete(t.id)} aria-label={`Remove ${t.expense} from recurring`}>🗑</button>
               )}
             </div>
           ))}

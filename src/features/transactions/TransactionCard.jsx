@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { getCategoryColor, getCategoryIcon } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
-import { formatDisplayDate } from '../../shared/dates.js';
+import { formatShortDate, formatLongDate } from '../../shared/dates.js';
 import { cx } from '../../shared/cx.js';
 import styles from './TransactionCard.module.css';
 
@@ -11,23 +11,21 @@ const VERTICAL_SCROLL_PX = 30;
 
 const TransactionCard = ({
   transaction: t,
+  showDate,
   isExpanded,
   isSwiped,
-  isConfirmingDelete,
-  isDeleting,
   isRecurring,
   onTap,
   onSwipeOpen,
   onSwipeClose,
-  onRequestDelete,
-  onCancelDelete,
   onDelete,
   onEdit,
   onToggleRecurring,
 }) => {
   const touchRef = useRef({ startX: 0, startY: 0, wasSwiped: false });
   const color = getCategoryColor(t.category);
-  const displayDate = formatDisplayDate(t.date);
+  // Inside a day group the heading already says the date
+  const subtitle = showDate ? `${formatShortDate(t.date)} · ${t.category}` : t.category;
 
   const handleTouchStart = (e) => {
     touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, wasSwiped: false };
@@ -56,24 +54,34 @@ const TransactionCard = ({
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.swipeDelete} onClick={stop(onDelete)}>
+      {/* Only reachable by swiping; keyboard users have the Delete button in the expanded card */}
+      <div className={styles.swipeDelete} onClick={stop(onDelete)} aria-hidden="true">
         🗑 Delete
       </div>
       <div
-        className={cx(styles.card, isExpanded && styles.expanded, isDeleting && styles.deleting)}
+        className={cx(styles.card, isExpanded && styles.expanded)}
         style={{ borderLeftColor: color, transform: `translateX(${isSwiped ? -82 : 0}px)` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={handleClick}
       >
-        {/* Collapsed row */}
-        <div className={styles.row}>
-          <div className={styles.icon} style={{ background: `${color}18` }}>
+        {/* Collapsed row; also the keyboard target for expanding (the card's buttons sit outside it) */}
+        <div
+          className={styles.row}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+          aria-label={`${t.expense}, ₹${formatAmount(t.amount)}, ${subtitle}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); }
+          }}
+        >
+          <div className={styles.icon} style={{ background: `${color}18` }} aria-hidden="true">
             {getCategoryIcon(t.category)}
           </div>
           <div className={styles.info}>
             <div className={styles.name}>{t.expense}</div>
-            <div className={styles.date}>{displayDate}</div>
+            <div className={styles.meta}>{subtitle}</div>
           </div>
           <div className={styles.amount}>₹{formatAmount(t.amount)}</div>
         </div>
@@ -83,7 +91,7 @@ const TransactionCard = ({
           <div className={styles.details}>
             <div className={styles.chip}>
               <div className={styles.chipLabel}>Category</div>
-              <div className={styles.chipValue} style={{ color }}>{t.category}</div>
+              <div className={cx(styles.chipValue, styles.categoryText)} style={{ '--category': color }}>{t.category}</div>
             </div>
             <div className={styles.chip}>
               <div className={styles.chipLabel}>Amount</div>
@@ -91,7 +99,7 @@ const TransactionCard = ({
             </div>
             <div className={styles.chip}>
               <div className={styles.chipLabel}>Date</div>
-              <div className={styles.chipValue}>{displayDate}</div>
+              <div className={styles.chipValue}>{formatLongDate(t.date)}</div>
             </div>
             <div className={styles.chip}>
               <div className={styles.chipLabel}>Description</div>
@@ -102,29 +110,18 @@ const TransactionCard = ({
                 className={cx(styles.recurringBtn, isRecurring && styles.active)}
                 onClick={stop(onToggleRecurring)}
               >
-                🔄 {isRecurring ? 'Remove from recurring' : 'Set as recurring'}
+                <span aria-hidden="true">🔄</span> {isRecurring ? 'Remove from recurring' : 'Set as recurring'}
               </button>
             </div>
 
             <div className={styles.footer}>
               <span className={styles.hint}>Tap to collapse</span>
               <div className={styles.actions}>
-                {isConfirmingDelete ? (
-                  <>
-                    <button className={styles.cancelBtn} onClick={stop(onCancelDelete)}>
-                      Cancel
-                    </button>
-                    <button className={styles.confirmBtn} onClick={stop(onDelete)}>
-                      🗑 Sure?
-                    </button>
-                  </>
-                ) : (
-                  <button className={styles.deleteBtn} onClick={stop(onRequestDelete)}>
-                    🗑 Delete
-                  </button>
-                )}
+                <button className={styles.deleteBtn} onClick={stop(onDelete)}>
+                  <span aria-hidden="true">🗑</span> Delete
+                </button>
                 <button className={styles.editBtn} onClick={stop(onEdit)}>
-                  ✏️ Edit
+                  <span aria-hidden="true">✏️</span> Edit
                 </button>
               </div>
             </div>

@@ -1,1 +1,151 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Colour tokens ──────────────────────────────────────────────────────────
+   Components use only these. data-theme on <html> is 'light' or 'dark' (set before
+   first paint by index.html, then kept in sync by ThemeProvider). */
+:root {
+  color-scheme: light;
+
+  /* Page and surfaces. The page fades from an indigo glow at the top into --page. */
+  --page: #f2f1fb;
+  --page-glow-top: #c7c2f5;
+  --page-glow-mid: #e3e0fb;
+  --page-background: linear-gradient(180deg, var(--page-glow-top) 0, var(--page-glow-mid) 260px, var(--page) 560px);
+  --surface: #fff;               /* cards, sheets, menus */
+  --surface-muted: #f8f9fb;      /* inputs, tiles, chips inside cards */
+  --surface-hover: #f3f4f6;
+  --surface-active: #e5e7eb;
+  --border: #e5e7eb;
+  --border-subtle: #f0f1f5;      /* dividers, bar tracks */
+
+  /* Text */
+  --text: #1a1a2e;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --placeholder: #8b90a0;
+  --disabled: #c4c7d2;
+
+  /* Accent (indigo) */
+  --accent: #4f46e5;             /* borders, focus, small accents */
+  --accent-solid: #4f46e5;       /* filled buttons; white text on top */
+  --accent-solid-hover: #4338ca;
+  --accent-text: #4338ca;        /* links and selected labels */
+  --accent-soft: #ede9ff;        /* selected chip background */
+  --accent-soft-hover: #ddd6fe;
+  --accent-soft-border: #c4b5fd;
+  --accent-ring: rgba(79, 70, 229, 0.12);
+  --focus: #4f46e5;
+
+  /* Edit mode (purple) */
+  --edit-accent: #7c3aed;
+  --edit-soft: #f5f3ff;
+
+  /* Status */
+  --danger-solid: #dc2626;
+  --danger-solid-hover: #b91c1c;
+  --danger-text: #b91c1c;
+  --danger-soft: #fef2f2;
+  --danger-soft-hover: #fee2e2;
+  --danger-border: #fecaca;
+  --success-text: #15803d;
+  --success-soft: #f0fdf4;
+  --success-border: #bbf7d0;
+  --warning-text: #b45309;
+
+  /* Effects */
+  --shadow-card: 0 1px 6px rgba(0, 0, 0, 0.06);
+  --shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --overlay: rgba(15, 15, 30, 0.55);
+  --toast-bg: #1a1a2e;
+  --skeleton-a: #f0f1f5;
+  --skeleton-b: #e4e6ed;
+
+  /* Indigo hero block at the top of the home screen */
+  --hero-bg: #4338ca;
+  --hero-text: #fff;
+  --hero-muted: rgba(255, 255, 255, 0.78);
+  --hero-glass: rgba(255, 255, 255, 0.14);
+  --hero-glass-hover: rgba(255, 255, 255, 0.24);
+  --hero-less: #a7f3d0;
+  --hero-more: #fde68a;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --page: #0f1020;
+  --page-glow-top: #2a2670;
+  --page-glow-mid: #17163a;
+  --surface: #1a1b2e;
+  --surface-muted: #23243a;
+  --surface-hover: #2a2b42;
+  --surface-active: #33344d;
+  --border: #33344d;
+  --border-subtle: #26273d;
+
+  --text: #e8e9f1;
+  --text-secondary: #c3c6d4;
+  --text-muted: #9ea2b5;
+  --placeholder: #6f7387;
+  --disabled: #4a4c63;
+
+  --accent: #818cf8;
+  --accent-solid: #5b5bd6;
+  --accent-solid-hover: #4f46e5;
+  --accent-text: #a5b4fc;
+  --accent-soft: #2b2960;
+  --accent-soft-hover: #35327a;
+  --accent-soft-border: #4c46a8;
+  --accent-ring: rgba(129, 140, 248, 0.25);
+  --focus: #a5b4fc;
+
+  --edit-accent: #a78bfa;
+  --edit-soft: #2a2150;
+
+  --danger-solid: #dc2626;
+  --danger-solid-hover: #b91c1c;
+  --danger-text: #fca5a5;
+  --danger-soft: #3a1c24;
+  --danger-soft-hover: #4a222c;
+  --danger-border: #6b2a35;
+  --success-text: #6ee7b7;
+  --success-soft: #12291f;
+  --success-border: #1f5a3f;
+  --warning-text: #fcd34d;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-raised: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --overlay: rgba(0, 0, 0, 0.65);
+  --toast-bg: #2e2f48;
+  --skeleton-a: #23243a;
+  --skeleton-b: #2e2f48;
+
+  --hero-bg: #1e1b4b;
+  --hero-glass: rgba(255, 255, 255, 0.08);
+  --hero-glass-hover: rgba(255, 255, 255, 0.16);
+}
+
+body {
+  background: var(--page);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One visible focus ring for keyboard users everywhere; mouse clicks don't show it */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Hide visually but keep available to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

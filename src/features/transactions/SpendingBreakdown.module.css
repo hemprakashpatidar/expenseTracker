@@ -1,0 +1,139 @@
+.card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 12px 14px 8px;
+  box-shadow: var(--shadow-card);
+  font-family: 'DM Sans', sans-serif;
+}
+.collapsed { padding-bottom: 12px; }
+
+/* The whole header row toggles the card */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  text-align: left;
+  color: var(--text);
+}
+.heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.topSummary {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chevron {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.topSummary + .chevron { margin-left: 0; }
+.chevronOpen { transform: rotate(180deg); }
+
+/* Collapsed: one bar split into category slices */
+.stacked {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.slice {
+  flex-basis: 0;
+  min-width: 3px;
+  background: var(--category);
+}
+:global([data-theme='dark']) .slice { background: color-mix(in srgb, var(--category) 70%, white); }
+
+.link {
+  background: none;
+  border: none;
+  color: var(--accent-text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 0 4px;
+  margin: 2px 0 2px -4px;
+}
+.rows { list-style: none; }
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 6px;
+  margin: 0 -6px;
+  width: calc(100% + 12px);
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s;
+}
+.row:hover { background: var(--surface-muted); }
+.row.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-border);
+}
+.row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.value {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.percent {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.track {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--category);
+}
+/* Category colours are dark shades; lift them on dark cards */
+:global([data-theme='dark']) .fill { background: color-mix(in srgb, var(--category) 70%, white); }

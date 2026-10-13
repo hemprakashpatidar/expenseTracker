@@ -1,31 +1,37 @@
-// Function to get category color based on category name
-export const getCategoryColor = (category) => {
-  const colors = {
-    'Food': '#FF6B35',
-    'Travel': '#4A90E2',
-    'Groceries': '#2ECC71',
-    'Medicine': '#E74C3C',
-    'Housing': '#8E44AD',
-    'Utilities': '#F39C12',
-    'Entertainment': '#E91E63',
-    'Shopping': '#9C27B0',
-    'Default': '#6C757D'
-  };
-  return colors[category] || colors['Default'];
+// One entry per category in shared/constants.js. Colours are dark enough for white text
+// (category breakdown tiles) and for coloured text on white (expanded card).
+// `label` is the short name shown on the add form's category tiles.
+const CATEGORY_STYLES = {
+  'Food & Dining':     { icon: '🍽️', color: '#C2410C', label: 'Food' },
+  'Transportation':    { icon: '🚗', color: '#1D4ED8', label: 'Transport' },
+  'Shopping':          { icon: '🛍️', color: '#7E22CE', label: 'Shopping' },
+  'Entertainment':     { icon: '🎬', color: '#BE185D', label: 'Fun' },
+  'Bills & Utilities': { icon: '💡', color: '#B45309', label: 'Bills' },
+  'Healthcare':        { icon: '💊', color: '#B91C1C', label: 'Health' },
+  'Travel':            { icon: '✈️', color: '#0369A1', label: 'Travel' },
+  'Education':         { icon: '📚', color: '#4338CA', label: 'Education' },
+  'Groceries':         { icon: '🛒', color: '#15803D', label: 'Groceries' },
+  'Housing':           { icon: '🏠', color: '#6D28D9', label: 'Housing' },
+  'Other':             { icon: '📦', color: '#4B5563', label: 'Other' },
 };
 
-// Function to get category icons
-export const getCategoryIcon = (category) => {
-  const icons = {
-    'Food': '🛒',
-    'Travel': '🚗',
-    'Groceries': '🛒',
-    'Medicine': '💊',
-    'Housing': '🏠',
-    'Utilities': '⚡',
-    'Entertainment': '🎬',
-    'Shopping': '🛍️',
-    'Other': '📦'
-  };
-  return icons[category] || '📦';
+// Older rows in Notion use these shorter names
+const ALIASES = {
+  'Food': 'Food & Dining',
+  'Medicine': 'Healthcare',
+  'Utilities': 'Bills & Utilities',
+};
+
+const DEFAULT_STYLE = CATEGORY_STYLES.Other;
+
+const styleFor = (category) => CATEGORY_STYLES[ALIASES[category] || category] || DEFAULT_STYLE;
+
+export const getCategoryColor = (category) => styleFor(category).color;
+
+export const getCategoryIcon = (category) => styleFor(category).icon;
+
+// Unknown or custom categories show their own name
+export const getCategoryLabel = (category) => {
+  const key = ALIASES[category] || category;
+  return CATEGORY_STYLES[key]?.label || category;
 };

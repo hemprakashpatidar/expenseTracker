@@ -3,7 +3,7 @@
   100% { background-position:  200% 0; }
 }
 .block {
-  background: linear-gradient(90deg, #f0f1f5 25%, #e4e6ed 50%, #f0f1f5 75%);
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 50%, var(--skeleton-a) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: 6px;
@@ -11,10 +11,10 @@
 }
 .circle { border-radius: 9px; width: 34px; height: 34px; }
 .card {
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   padding: 11px 14px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: center;
   gap: 11px;

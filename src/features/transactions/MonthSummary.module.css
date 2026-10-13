@@ -1,0 +1,57 @@
+/* The month's indigo card; sits in the same column as the other cards */
+.card {
+  background: var(--hero-bg);
+  color: var(--hero-text);
+  border-radius: 18px;
+  padding: 14px 14px 16px;
+  font-family: 'DM Sans', sans-serif;
+  /* An indigo focus ring would vanish on indigo */
+  --focus: #fff;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hero-muted);
+}
+.amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--hero-text);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.meta {
+  font-size: 13px;
+  color: var(--hero-muted);
+  margin-top: 4px;
+}
+.comparison {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hero-muted);
+  margin-top: 4px;
+}
+.comparison.less { color: var(--hero-less); }
+.comparison.more { color: var(--hero-more); }
+.filtered {
+  font-size: 12px;
+  color: var(--hero-muted);
+  margin-top: 4px;
+}
+
+/* Loading placeholders: translucent blocks instead of the grey shimmer */
+.card .skAmount,
+.card .skLine {
+  background: var(--hero-glass-hover);
+  animation: none;
+}
+.skAmount { height: 36px; width: 140px; margin: 2px 0; border-radius: 8px; }
+.skLine { height: 13px; width: 90px; margin-top: 8px; }

@@ -18,5 +18,5 @@ export const createTransaction = (input) =>
 export const updateTransaction = (id, changes) =>
   apiPatch(`/api/transactions/${id}`, changes).then(parse).then(data => data.transaction);
 
-export const deleteTransaction = (id) =>
-  apiDelete(`/api/transactions/${id}`).then(parse);
+export const deleteTransaction = (id, options) =>
+  apiDelete(`/api/transactions/${id}`, options).then(parse);

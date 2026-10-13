@@ -5,11 +5,11 @@ import { MONTH_NAMES } from '../../shared/constants.js';
 import { toISODate } from '../../shared/dates.js';
 import AppHeader from '../../shared/AppHeader.jsx';
 import TransactionForm from './TransactionForm.jsx';
-import MonthPicker from './MonthPicker.jsx';
+import MonthNav from './MonthNav.jsx';
 import SearchBox from './SearchBox.jsx';
-import TotalCard from './TotalCard.jsx';
+import MonthSummary from './MonthSummary.jsx';
 import Filters from './Filters.jsx';
-import CategoryBreakdown from './CategoryBreakdown.jsx';
+import SpendingBreakdown from './SpendingBreakdown.jsx';
 import TransactionList from './TransactionList.jsx';
 import {
   useMonthTransactions,
@@ -17,7 +17,12 @@ import {
   useUpdateTransaction,
   useDeleteTransaction,
   useInvalidateTransactions,
+  useLatestTransactions,
 } from './queries.js';
+import { recentExpenses } from './addDefaults.js';
+import { deleteTransaction } from '../../api/transactions.js';
+import { useUndoableDelete } from './useUndoableDelete.js';
+import UndoToast from './UndoToast.jsx';
 import { applyFilters, uniqueValues, totalByCategory } from './filtering.js';
 import ImportTransactions from '../import/ImportTransactions.jsx';
 import RecurringSuggestions from '../recurring/RecurringSuggestions.jsx';
@@ -34,6 +39,7 @@ const TransactionsPage = () => {
   const [category, setCategory] = useState('All');
   const [paymentMethod, setPaymentMethod] = useState('All');
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [sortBy, setSortBy] = useState('date');
   const [sortDirection, setSortDirection] = useState('desc');
 
@@ -42,18 +48,69 @@ const TransactionsPage = () => {
   const [deleteError, setDeleteError] = useState(false);
   const [addingRecurringId, setAddingRecurringId] = useState(null);
 
-  const { data: transactions = [], isLoading, isError, refetch } = useMonthTransactions(month, year);
+  const { data: loaded = [], isLoading, isError, refetch } = useMonthTransactions(month, year);
+
+  // Last month, for the comparison in the summary (cached like any other month)
+  const previous = new Date(year, month - 2, 1);
+  const previousMonth = previous.getMonth() + 1;
+  const previousYear = previous.getFullYear();
+  const { data: previousLoaded, isSuccess: previousReady } = useMonthTransactions(previousMonth, previousYear);
   const createMutation = useCreateTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
   const invalidateTransactions = useInvalidateTransactions();
   const recurring = useRecurring(year, month);
+  const latest = useLatestTransactions();
+
+  // Ids whose delete request is in flight; they stay hidden until the cache drops them
+  const [sendingIds, setSendingIds] = useState([]);
+
+  const showDeleteError = () => {
+    setDeleteError(true);
+    setTimeout(() => setDeleteError(false), 3000);
+  };
+
+  // useUndoableDelete always calls the latest version of this
+  const commitDelete = (transaction, { keepalive } = {}) => {
+    // The page is closing: fire and forget, nothing is left to update
+    if (keepalive) {
+      deleteTransaction(transaction.id, { keepalive: true }).catch(() => {});
+      return;
+    }
+    setSendingIds(ids => [...ids, transaction.id]);
+    // mutateAsync, not mutate: mutate's per-call callbacks only fire for the latest call,
+    // and quick successive deletes can overlap
+    deleteMutation.mutateAsync(transaction.id)
+      .catch(err => { console.error('Delete failed', err); showDeleteError(); })
+      .finally(() => setSendingIds(ids => ids.filter(id => id !== transaction.id)));
+  };
+
+  const undoableDelete = useUndoableDelete(commitDelete);
+
+  const transactions = useMemo(() => {
+    const hidden = new Set(sendingIds);
+    if (undoableDelete.pending) hidden.add(undoableDelete.pending.id);
+    return hidden.size ? loaded.filter(t => !hidden.has(t.id)) : loaded;
+  }, [loaded, sendingIds, undoableDelete.pending]);
 
   const rows = useMemo(
     () => applyFilters(transactions, { category, paymentMethod, search, sortBy, sortDirection }),
     [transactions, category, paymentMethod, search, sortBy, sortDirection]
   );
-  const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
+  const shownTotal = rows.reduce((sum, r) => sum + r.amount, 0);
+  const monthTotal = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const filtersActive = category !== 'All' || paymentMethod !== 'All' || search.trim() !== '';
+
+  // While a month is still running, compare with the same days of last month, not all of it
+  const now = new Date();
+  const partialMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+  const previousTotal = previousReady
+    ? previousLoaded
+        .filter(t => !partialMonth || (t.date && Number(t.date.slice(8, 10)) <= now.getDate()))
+        .reduce((sum, t) => sum + t.amount, 0)
+    : null;
+
+  const breakdown = totalByCategory(transactions);
 
   const handleMonthChange = (newMonth, newYear) => {
     setMonth(newMonth);
@@ -67,19 +124,18 @@ const TransactionsPage = () => {
     else { setSortBy(key); setSortDirection('desc'); }
   };
 
-  const clearFilters = () => { setCategory('All'); setPaymentMethod('All'); };
+  const clearFilters = () => { setCategory('All'); setPaymentMethod('All'); setSearch(''); };
 
-  // Resolves true when the row was deleted, so the list can collapse it
-  const handleDelete = async (transaction) => {
-    try {
-      await deleteMutation.mutateAsync(transaction.id);
-      return true;
-    } catch (err) {
-      console.error('Delete failed', err);
-      setDeleteError(true);
-      setTimeout(() => setDeleteError(false), 3000);
-      return false;
-    }
+  // Closing search also clears it, so a hidden search never filters the list
+  const toggleSearch = () => {
+    if (searchOpen) setSearch('');
+    setSearchOpen(open => !open);
+  };
+
+  // Send a waiting delete before the session token is cleared
+  const handleLogout = () => {
+    undoableDelete.flush();
+    logout();
   };
 
   const handleConfirmSuggestion = (suggestion) => {
@@ -104,31 +160,42 @@ const TransactionsPage = () => {
 
   return (
     <>
-
       <div className={styles.root}>
         <div className={styles.app}>
-          <AppHeader userName={currentUser?.userName} onLogout={logout} />
+          <AppHeader
+            userName={currentUser?.userName}
+            searchOpen={searchOpen}
+            onToggleSearch={toggleSearch}
+            onImport={() => setModal('import')}
+            onLogout={handleLogout}
+          />
 
-          <div className={styles.controls}>
-            {/* Month + Import/Add */}
-            <div className={styles.row}>
-              <MonthPicker month={month} year={year} onChange={handleMonthChange} />
-              <div className={styles.buttons}>
-                <button className={styles.importBtn} onClick={() => setModal('import')}>
-                  📥 Import
-                </button>
-                <button className={styles.addBtn} onClick={() => setModal('add')}>
-                  ＋ Add
-                </button>
-              </div>
-            </div>
+          {searchOpen && <SearchBox value={search} onChange={setSearch} autoFocus />}
 
-            {/* Search + Total */}
-            <div className={styles.row}>
-              <SearchBox value={search} onChange={setSearch} />
-              <TotalCard isLoading={isLoading} total={totalAmount} shownCount={rows.length} totalCount={transactions.length} />
-            </div>
+          <MonthSummary
+            isLoading={isLoading}
+            monthNav={<MonthNav month={month} year={year} onChange={handleMonthChange} />}
+            monthName={MONTH_NAMES[month - 1]}
+            total={monthTotal}
+            count={transactions.length}
+            previousTotal={previousTotal}
+            previousMonthName={MONTH_NAMES[previousMonth - 1]}
+            partialMonth={partialMonth}
+            filtersActive={filtersActive}
+            shownTotal={shownTotal}
+            shownCount={rows.length}
+          />
 
+          {!isLoading && (
+            <SpendingBreakdown
+              breakdown={breakdown}
+              total={monthTotal}
+              selectedCategory={category}
+              onSelectCategory={setCategory}
+            />
+          )}
+
+          {transactions.length > 0 && (
             <Filters
               categories={uniqueValues(transactions, 'category')}
               paymentMethods={uniqueValues(transactions, 'paymentMethod')}
@@ -137,9 +204,7 @@ const TransactionsPage = () => {
               onCategoryChange={setCategory}
               onPaymentMethodChange={setPaymentMethod}
             />
-
-            <CategoryBreakdown breakdown={totalByCategory(transactions)} />
-          </div>
+          )}
 
           <RecurringSuggestions
             suggestions={recurring.pending}
@@ -161,8 +226,7 @@ const TransactionsPage = () => {
             sortDirection={sortDirection}
             onSort={handleSort}
             onClearFilters={clearFilters}
-            deletingId={deleteMutation.isPending ? deleteMutation.variables : null}
-            onDelete={handleDelete}
+            onDelete={undoableDelete.remove}
             onEdit={setEditingTransaction}
             isRecurring={recurring.isRecurring}
             onToggleRecurring={recurring.toggle}
@@ -170,8 +234,15 @@ const TransactionsPage = () => {
         </div>
       </div>
 
+      <div className={styles.fabDock}>
+        <button className={styles.fab} onClick={() => setModal('add')} aria-label="Add expense" title="Add expense">
+          <span aria-hidden="true">＋</span>
+        </button>
+      </div>
+
       {modal === 'add' && (
         <TransactionForm
+          recent={recentExpenses(latest)}
           onSubmit={values => createMutation.mutateAsync(values)}
           onClose={closeModal}
         />
@@ -200,9 +271,17 @@ const TransactionsPage = () => {
         />
       )}
 
-      {deleteError && (
-        <div className={styles.toast}>
-          ⚠️ Couldn't delete — please try again
+      {undoableDelete.pending && (
+        <UndoToast
+          key={undoableDelete.pending.id}
+          message={`Deleted "${undoableDelete.pending.expense}"`}
+          onUndo={undoableDelete.undo}
+        />
+      )}
+
+      {deleteError && !undoableDelete.pending && (
+        <div className={styles.toast} role="alert">
+          <span aria-hidden="true">⚠️</span> Couldn't delete. It's back in the list.
         </div>
       )}
     </>
