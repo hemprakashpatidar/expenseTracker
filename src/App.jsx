@@ -8,6 +8,9 @@ import { useAuth } from './features/auth/useAuth.js';
 import Login from './features/auth/Login.jsx';
 import Register from './features/auth/Register.jsx';
 import TransactionsPage from './features/transactions/TransactionsPage.jsx';
+import PeoplePage from './features/ledger/PeoplePage.jsx';
+import PersonPage from './features/ledger/PersonPage.jsx';
+import AppLayout from './shared/AppLayout.jsx';
 
 // Signed-out visitors go to /login and come back to where they were headed afterwards
 const RequireAuth = ({ children }) => {
@@ -26,7 +29,11 @@ export const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
     <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
-    <Route path="/" element={<RequireAuth><TransactionsPage /></RequireAuth>} />
+    <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
+      <Route path="/" element={<TransactionsPage />} />
+      <Route path="/people" element={<PeoplePage />} />
+      <Route path="/people/:id" element={<PersonPage />} />
+    </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 );

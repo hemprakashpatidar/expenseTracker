@@ -1,0 +1,372 @@
+/* ── Indigo summary card (People overall, a person's balance) ── */
+.summary {
+  background: var(--hero-bg);
+  color: var(--hero-text);
+  border-radius: 18px;
+  padding: 14px 14px 16px;
+  font-family: 'DM Sans', sans-serif;
+  /* An indigo focus ring would vanish on indigo */
+  --focus: #fff;
+}
+.summaryLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hero-muted);
+}
+.summaryAmount {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.summaryMeta {
+  font-size: 13px;
+  color: var(--hero-muted);
+  margin-top: 4px;
+}
+.summary .summarySkeleton,
+.balanceSkeleton {
+  background: var(--hero-glass-hover);
+  animation: none;
+}
+.summarySkeleton { height: 32px; width: 180px; margin-top: 6px; border-radius: 8px; }
+.balanceSkeleton { height: 120px; border-radius: 18px; background: var(--hero-bg); }
+.summaryActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.heroBtn {
+  flex: 1;
+  min-height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  color: #4338ca;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.heroBtn:hover { opacity: 0.92; }
+.heroBtnGhost {
+  background: var(--hero-glass);
+  color: var(--hero-text);
+}
+.heroBtnGhost:hover { background: var(--hero-glass-hover); opacity: 1; }
+
+/* ── White content cards ── */
+.card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-card);
+  font-family: 'DM Sans', sans-serif;
+}
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.cardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ── Buttons and messages ── */
+.textBtn {
+  background: none;
+  border: none;
+  color: var(--accent-text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 0 6px;
+}
+.textBtn:disabled { opacity: 0.6; cursor: default; }
+.primaryBtn {
+  min-height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent-solid);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primaryBtn:hover:not(:disabled) { background: var(--accent-solid-hover); }
+.primaryBtn:disabled { opacity: 0.6; cursor: default; }
+.dangerBtn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--danger-solid);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dangerBtn:hover:not(:disabled) { background: var(--danger-solid-hover); }
+.inlineError {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: var(--danger-text);
+}
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ── Inline add / rename ── */
+.addPerson {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 10px;
+}
+.addPersonInput {
+  flex: 1;
+  min-width: 140px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  outline: none;
+}
+.addPersonInput:focus { border-color: var(--accent); background: var(--surface); }
+
+/* ── People list ── */
+.people { list-style: none; }
+.people li + li { border-top: 1px solid var(--border-subtle); }
+.personRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 2px;
+  text-decoration: none;
+  color: var(--text);
+  border-radius: 10px;
+}
+.personRow:hover { background: var(--surface-muted); }
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.personInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.personName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.personMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.balance,
+.effect {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  text-align: right;
+}
+.balance { font-family: 'DM Sans', sans-serif; }
+.owed { color: var(--success-text); }
+.owe { color: var(--warning-text); }
+.settled { color: var(--text-muted); }
+
+.rowsSkeleton { display: flex; flex-direction: column; gap: 8px; padding: 6px 0; }
+.rowSkeleton { height: 44px; border-radius: 10px; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 20px 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.emptyIcon { font-size: 32px; }
+.emptyTitle { font-size: 15px; font-weight: 700; color: var(--text); }
+
+/* ── Person page ── */
+.personHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.back {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.personTitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day + .day { margin-top: 6px; }
+.dayHeading {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 8px 2px 2px;
+}
+.activities { list-style: none; }
+.activity { border-radius: 10px; }
+.activityOpen { background: var(--surface-muted); }
+.activityMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  border-radius: 10px;
+}
+.activityIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.activityOpen .activityIcon { background: var(--surface); }
+.activityActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 6px 8px;
+}
+.confirmText {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.manage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* ── Entry sheet extras ── */
+.splitPreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.splitPreview strong { color: var(--text); font-family: 'DM Mono', monospace; }
+.splitOutcome {
+  flex-basis: 100%;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+.toggleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.toggleRow input {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--accent-solid);
+  flex-shrink: 0;
+}
+.toggleOn { border-color: var(--accent); background: var(--accent-soft); }
+.toggleHint {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 2px;
+}

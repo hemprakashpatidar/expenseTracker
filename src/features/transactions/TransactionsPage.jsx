@@ -4,6 +4,7 @@ import { getAuthData } from '../auth/session.js';
 import { MONTH_NAMES } from '../../shared/constants.js';
 import { toISODate } from '../../shared/dates.js';
 import AppHeader from '../../shared/AppHeader.jsx';
+import Fab from '../../shared/Fab.jsx';
 import TransactionForm from './TransactionForm.jsx';
 import MonthNav from './MonthNav.jsx';
 import SearchBox from './SearchBox.jsx';
@@ -28,6 +29,7 @@ import ImportTransactions from '../import/ImportTransactions.jsx';
 import RecurringSuggestions from '../recurring/RecurringSuggestions.jsx';
 import ManageRecurring from '../recurring/ManageRecurring.jsx';
 import { useRecurring } from '../recurring/useRecurring.js';
+import page from '../../shared/Page.module.css';
 import styles from './TransactionsPage.module.css';
 
 const TransactionsPage = () => {
@@ -160,8 +162,8 @@ const TransactionsPage = () => {
 
   return (
     <>
-      <div className={styles.root}>
-        <div className={styles.app}>
+      <div className={page.root}>
+        <div className={page.app}>
           <AppHeader
             userName={currentUser?.userName}
             searchOpen={searchOpen}
@@ -234,11 +236,7 @@ const TransactionsPage = () => {
         </div>
       </div>
 
-      <div className={styles.fabDock}>
-        <button className={styles.fab} onClick={() => setModal('add')} aria-label="Add expense" title="Add expense">
-          <span aria-hidden="true">＋</span>
-        </button>
-      </div>
+      <Fab label="Add expense" onClick={() => setModal('add')} />
 
       {modal === 'add' && (
         <TransactionForm

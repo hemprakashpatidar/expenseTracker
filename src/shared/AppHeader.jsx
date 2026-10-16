@@ -9,7 +9,8 @@ const THEME_OPTIONS = [
   { value: 'dark', label: 'Dark' },
 ];
 
-const AppHeader = ({ userName, searchOpen, onToggleSearch, onImport, onLogout }) => {
+// Search and Import only appear when their handlers are passed
+const AppHeader = ({ title = 'Expenses', userName, searchOpen, onToggleSearch, onImport, onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { preference, setPreference } = useTheme();
   const menuRef = useRef(null);
@@ -31,16 +32,18 @@ const AppHeader = ({ userName, searchOpen, onToggleSearch, onImport, onLogout })
 
   return (
     <header className={styles.header}>
-      <h1 className={styles.title}>Expenses</h1>
+      <h1 className={styles.title}>{title}</h1>
       <div className={styles.actions}>
-        <button
-          className={cx(styles.iconBtn, searchOpen && styles.active)}
-          onClick={onToggleSearch}
-          aria-label={searchOpen ? 'Close search' : 'Search expenses'}
-          aria-pressed={searchOpen}
-        >
-          <span aria-hidden="true">🔍</span>
-        </button>
+        {onToggleSearch && (
+          <button
+            className={cx(styles.iconBtn, searchOpen && styles.active)}
+            onClick={onToggleSearch}
+            aria-label={searchOpen ? 'Close search' : 'Search expenses'}
+            aria-pressed={searchOpen}
+          >
+            <span aria-hidden="true">🔍</span>
+          </button>
+        )}
 
         <div className={styles.menuWrap} ref={menuRef}>
           <button
@@ -72,9 +75,11 @@ const AppHeader = ({ userName, searchOpen, onToggleSearch, onImport, onLogout })
                   ))}
                 </div>
               </div>
-              <button className={styles.menuItem} role="menuitem" onClick={choose(onImport)}>
-                <span aria-hidden="true">📥</span> Import statement
-              </button>
+              {onImport && (
+                <button className={styles.menuItem} role="menuitem" onClick={choose(onImport)}>
+                  <span aria-hidden="true">📥</span> Import statement
+                </button>
+              )}
               <button className={cx(styles.menuItem, styles.danger)} role="menuitem" onClick={choose(onLogout)}>
                 Log out
               </button>

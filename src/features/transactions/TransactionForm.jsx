@@ -1,23 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { getCategoryIcon, getCategoryLabel } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
 import { matchCategory } from '../../shared/guessCategory.js';
 import { getLastPaymentMethod, saveLastPaymentMethod } from './addDefaults.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
-import { todayISO, toISODate, formatShortDate } from '../../shared/dates.js';
+import { todayISO } from '../../shared/dates.js';
 import { cx } from '../../shared/cx.js';
-import styles from './TransactionForm.module.css';
+import ChoiceGroup from '../../shared/form/ChoiceGroup.jsx';
+import DateChoice from '../../shared/form/DateChoice.jsx';
+import { CUSTOM } from '../../shared/form/customChoice.js';
+import styles from '../../shared/form/SheetForm.module.css';
 
-const CUSTOM = 'Other (custom)';
 // A value outside the known list is shown as the custom option with the text filled in
 const splitKnown = (value, known) => known.includes(value)
   ? { selected: value, custom: '' }
   : { selected: CUSTOM, custom: value || '' };
-
-const yesterdayISO = () => {
-  const now = new Date();
-  return toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
-};
 
 const initialValues = (transaction) => {
   if (!transaction) {
@@ -241,101 +238,6 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
         </form>
       </div>
     </div>
-  );
-};
-
-// One scrollable line of toggle chips plus a "custom" option that reveals a text field.
-// The selected chip is kept in view, including when the value changes from outside
-// (auto category, a Recent shortcut).
-const ChoiceGroup = ({
-  label, customLabel, options, renderOption, optionTitle, customOption,
-  value, customValue, customPlaceholder, disabled, onChange, onCustomChange,
-}) => {
-  const rowRef = useRef(null);
-
-  useEffect(() => {
-    const row = rowRef.current;
-    const selected = row?.querySelector('[aria-pressed="true"]');
-    if (!row || !selected) return;
-    // Scroll only the row, never the sheet
-    const target = selected.offsetLeft - (row.clientWidth - selected.offsetWidth) / 2;
-    row.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
-  }, [value]);
-
-  const choice = (key, content, title, ariaLabel) => (
-    <button
-      key={key}
-      type="button"
-      className={cx(styles.chip, value === key && styles.selected)}
-      aria-pressed={value === key}
-      aria-label={ariaLabel}
-      title={title}
-      onClick={() => onChange(key)}
-      disabled={disabled}
-    >
-      {content}
-    </button>
-  );
-
-  return (
-    <fieldset className={styles.fieldset}>
-      <legend className={styles.label}>{label}</legend>
-      <div className={styles.chipRow} ref={rowRef}>
-        {options.map(option => choice(option, renderOption(option), optionTitle?.(option)))}
-        {choice(CUSTOM, customOption, undefined, customLabel[0].toUpperCase() + customLabel.slice(1))}
-      </div>
-      {value === CUSTOM && (
-        <input
-          className={cx(styles.input, styles.customInput)}
-          type="text"
-          aria-label={`Enter ${customLabel}`}
-          value={customValue}
-          onChange={e => onCustomChange(e.target.value)}
-          placeholder={customPlaceholder}
-          disabled={disabled}
-          autoFocus
-        />
-      )}
-    </fieldset>
-  );
-};
-
-// Today / Yesterday cover most entries; "Pick date" lays a transparent native date input
-// over the chip, so a tap opens the platform's own picker
-const DateChoice = ({ value, disabled, onChange }) => {
-  const today = todayISO();
-  const yesterday = yesterdayISO();
-  const isOther = value !== today && value !== yesterday;
-
-  const openPicker = (e) => {
-    // Desktop Chrome only opens the calendar from its icon unless asked
-    try { e.currentTarget.showPicker?.(); } catch { /* the input still works as typed */ }
-  };
-
-  return (
-    <fieldset className={styles.fieldset}>
-      <legend className={styles.label}>Date</legend>
-      <div className={styles.chips}>
-        <button type="button" className={cx(styles.chip, value === today && styles.selected)} aria-pressed={value === today} onClick={() => onChange(today)} disabled={disabled}>
-          Today
-        </button>
-        <button type="button" className={cx(styles.chip, value === yesterday && styles.selected)} aria-pressed={value === yesterday} onClick={() => onChange(yesterday)} disabled={disabled}>
-          Yesterday
-        </button>
-        <span className={cx(styles.chip, styles.pickChip, isOther && styles.selected)}>
-          <span aria-hidden="true">📅</span> {isOther ? formatShortDate(value) : 'Pick date'}
-          <input
-            className={styles.pickInput}
-            type="date"
-            aria-label="Pick a date"
-            value={value}
-            onClick={openPicker}
-            onChange={e => e.target.value && onChange(e.target.value)}
-            disabled={disabled}
-          />
-        </span>
-      </div>
-    </fieldset>
   );
 };
 
