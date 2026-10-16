@@ -1,0 +1,19 @@
+/* Shared page frame: indigo glow background and the centred app column */
+.root {
+  font-family: 'DM Sans', sans-serif;
+  /* Indigo glow behind the header and month card, fading to the plain page for the list */
+  background: var(--page-background);
+  background-color: var(--page);
+  min-height: 100vh;
+}
+
+.app {
+  width: 100%;
+  max-width: 444px;
+  margin: 0 auto;
+  /* Bottom room so the tab bar and floating add button never cover the last row */
+  padding: 12px 12px calc(var(--tabbar-height) + 96px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

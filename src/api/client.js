@@ -23,3 +23,12 @@ export const apiGet = (endpoint) => apiRequest('GET', endpoint);
 export const apiPost = (endpoint, body) => apiRequest('POST', endpoint, body);
 export const apiPatch = (endpoint, body) => apiRequest('PATCH', endpoint, body);
 export const apiDelete = (endpoint, options) => apiRequest('DELETE', endpoint, undefined, options);
+
+// Resolves with the JSON body, or throws an Error carrying the server's { message }
+export const parse = async (response) => {
+  const data = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(data?.message || `Request failed with status ${response.status}`);
+  }
+  return data;
+};

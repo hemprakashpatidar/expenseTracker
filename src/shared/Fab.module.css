@@ -1,0 +1,33 @@
+/* Floating add button, aligned with the right edge of the app column */
+.dock {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--tabbar-height) + 16px + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 444px;
+  padding: 0 16px;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+  z-index: 50;
+}
+.fab {
+  pointer-events: auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-solid);
+  color: white;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  transition: transform 0.15s, background 0.15s;
+}
+.fab:hover { background: var(--accent-solid-hover); transform: translateY(-1px); }
+.fab:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 2px; }
