@@ -8,6 +8,7 @@ import { useAllPeople, useGroup, useDeleteGroupExpense, useDeleteGroupSettlement
 import { positionHeading, memberPosition } from './format.js';
 import GroupExpenseSheet from './GroupExpenseSheet.jsx';
 import GroupSettleSheet from './GroupSettleSheet.jsx';
+import ShareLinkCard from './ShareLinkCard.jsx';
 import skeleton from '../../shared/Skeleton.module.css';
 import page from '../../shared/Page.module.css';
 import ledgerStyles from '../ledger/Ledger.module.css';
@@ -300,6 +301,8 @@ const GroupPage = () => {
                 ))
               )}
             </section>
+
+            <ShareLinkCard group={group} />
 
             <GroupSettings key={group.id + group.name} group={group} members={members} onNotice={setNotice} />
           </>

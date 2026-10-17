@@ -28,3 +28,11 @@ export const addGroupSettlement = (groupId, settlement) =>
 
 export const deleteGroupSettlement = (groupId, settlementId) =>
   apiDelete(`/api/groups/${groupId}/settlements/${settlementId}`).then(parse);
+
+// Read-only share link: { active, token?, createdAt?, needsNewLink? }
+export const getShareLink = (groupId) => apiGet(`/api/groups/${groupId}/share`).then(parse);
+
+// Makes a new link; any previous one stops working
+export const createShareLink = (groupId) => apiPost(`/api/groups/${groupId}/share`).then(parse);
+
+export const revokeShareLink = (groupId) => apiDelete(`/api/groups/${groupId}/share`).then(parse);
