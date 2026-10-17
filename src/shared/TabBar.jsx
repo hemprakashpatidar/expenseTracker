@@ -4,10 +4,11 @@ import styles from './TabBar.module.css';
 
 const TABS = [
   { to: '/', label: 'Expenses', icon: '💸', end: true },
-  { to: '/people', label: 'People', icon: '👥' },
+  { to: '/people', label: 'People', icon: '🤝' },
+  { to: '/groups', label: 'Groups', icon: '👥' },
 ];
 
-// Bottom navigation between the main sections; People stays active on /people/:id too
+// Bottom navigation between the main sections; a tab stays active on its detail pages too
 const TabBar = () => (
   <nav className={styles.bar} aria-label="Main">
     <div className={styles.inner}>

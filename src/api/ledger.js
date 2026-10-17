@@ -12,9 +12,11 @@ export const updateLedger = (id, changes) =>
 
 // { ledger, people: [{ id, name, ledger, archived, balance, lastActivityOn }], totals: { owedToYou, youOwe } }
 // balance > 0: they owe you; < 0: you owe them. Without ledgerId the server uses your default ledger.
-export const listPeople = ({ ledgerId, includeArchived = false } = {}) => {
+// allLedgers: everyone across your ledgers (each person carries their ledger)
+export const listPeople = ({ ledgerId, allLedgers = false, includeArchived = false } = {}) => {
   const params = new URLSearchParams();
   if (ledgerId) params.set('ledgerId', ledgerId);
+  if (allLedgers) params.set('allLedgers', 'true');
   if (includeArchived) params.set('includeArchived', 'true');
   const qs = params.toString();
   return apiGet(`/api/people${qs ? `?${qs}` : ''}`).then(parse);
@@ -36,7 +38,8 @@ export const createEntry = (entry) => apiPost('/api/ledger/entries', entry).then
 // Resolves with { myShareRemoved } (null when the entry had no linked expense)
 export const deleteEntry = (id) => apiDelete(`/api/ledger/entries/${id}`).then(parse);
 
-// direction: 'they_paid' | 'i_paid'
+// direction: 'they_paid' | 'i_paid'. scope: 'direct' (default) | 'group' (with groupId) | 'all'
+// ('all' clears the combined balance: amount must equal it)
 export const createSettlement = (settlement) => apiPost('/api/ledger/settlements', settlement).then(parse);
 
 export const deleteSettlement = (id) => apiDelete(`/api/ledger/settlements/${id}`).then(parse);

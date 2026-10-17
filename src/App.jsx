@@ -10,6 +10,8 @@ import Register from './features/auth/Register.jsx';
 import TransactionsPage from './features/transactions/TransactionsPage.jsx';
 import PeoplePage from './features/ledger/PeoplePage.jsx';
 import PersonPage from './features/ledger/PersonPage.jsx';
+import GroupsPage from './features/groups/GroupsPage.jsx';
+import GroupPage from './features/groups/GroupPage.jsx';
 import AppLayout from './shared/AppLayout.jsx';
 
 // Signed-out visitors go to /login and come back to where they were headed afterwards
@@ -33,6 +35,8 @@ export const AppRoutes = () => (
       <Route path="/" element={<TransactionsPage />} />
       <Route path="/people" element={<PeoplePage />} />
       <Route path="/people/:id" element={<PersonPage />} />
+      <Route path="/groups" element={<GroupsPage />} />
+      <Route path="/groups/:id" element={<GroupPage />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>

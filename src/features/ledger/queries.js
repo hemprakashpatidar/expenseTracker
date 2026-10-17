@@ -43,6 +43,8 @@ const useLedgerMutation = (mutationFn, { touchesExpenses = () => false } = {}) =
       queryClient.invalidateQueries({ queryKey: peopleKeys.all });
       // Ledger totals in the switcher come from the same balances
       queryClient.invalidateQueries({ queryKey: ledgerKeys.all });
+      // Settling up can include group parts, and people names show inside groups
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
       // "Add my share" creates (and deleting removes) a normal expense too
       if (touchesExpenses(result, variables)) {
         queryClient.invalidateQueries({ queryKey: transactionKeys.all });

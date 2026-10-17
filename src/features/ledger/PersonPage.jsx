@@ -13,6 +13,9 @@ import styles from './Ledger.module.css';
 
 const ICONS = { lent: '💸', borrowed: '🤝', split: '🍽️', settlement: '✅' };
 
+// +₹500 (they owe you) / −₹200 (you owe them)
+const signed = (amount) => `${amount > 0 ? '+' : amount < 0 ? '−' : ''}${formatRupees(amount)}`;
+
 // Title and detail line for one history row, from your point of view
 const describe = (item, name) => {
   switch (item.type) {
@@ -229,6 +232,22 @@ const PersonPage = () => {
             <section className={styles.summary} aria-label="Balance">
               <div className={styles.summaryLabel}>{balanceHeading(person.name, person.balance)}</div>
               {person.balance !== 0 && <div className={styles.summaryAmount}>{formatRupees(person.balance)}</div>}
+              {person.groupBalances?.length > 0 && (
+                <ul className={styles.breakdown} aria-label="Balance by source">
+                  {person.directBalance !== 0 && (
+                    <li className={styles.breakdownRow}>
+                      <span>Direct</span>
+                      <span className={styles.breakdownAmount}>{signed(person.directBalance)}</span>
+                    </li>
+                  )}
+                  {person.groupBalances.map(g => (
+                    <li key={g.groupId} className={styles.breakdownRow}>
+                      <Link to={`/groups/${g.groupId}`}><span aria-hidden="true">{g.emoji || '👥'}</span> {g.name}</Link>
+                      <span className={styles.breakdownAmount}>{signed(g.balance)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <div className={styles.summaryActions}>
                 {person.balance !== 0 && !person.archived && (
                   <button className={styles.heroBtn} onClick={() => setSheet('settle')}>Settle up</button>
@@ -309,6 +328,7 @@ const PersonPage = () => {
       {sheet === 'entry' && person && (
         <EntrySheet
           person={person}
+          ledgerId={person.ledger.id}
           people={peopleData?.people}
           onClose={() => setSheet(null)}
           onSaved={({ shareNotAdded }) => {
