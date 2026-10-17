@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { formatDayHeading } from '../../shared/dates.js';
 import { cx } from '../../shared/cx.js';
 import Fab from '../../shared/Fab.jsx';
-import { usePeople, usePerson, useDeleteEntry, useDeleteSettlement, useUpdatePerson } from './queries.js';
+import { useLedgers, usePerson, useDeleteEntry, useDeleteSettlement, useUpdatePerson, usePeople } from './queries.js';
 import { balanceHeading, formatRupees } from './balance.js';
 import EntrySheet from './EntrySheet.jsx';
 import SettleSheet from './SettleSheet.jsx';
@@ -12,6 +12,9 @@ import page from '../../shared/Page.module.css';
 import styles from './Ledger.module.css';
 
 const ICONS = { lent: '💸', borrowed: '🤝', split: '🍽️', settlement: '✅' };
+
+// +₹500 (they owe you) / −₹200 (you owe them)
+const signed = (amount) => `${amount > 0 ? '+' : amount < 0 ? '−' : ''}${formatRupees(amount)}`;
 
 // Title and detail line for one history row, from your point of view
 const describe = (item, name) => {
@@ -116,11 +119,50 @@ const RenamePerson = ({ person, onDone }) => {
   );
 };
 
+// Moves the person, with their whole history, to another active ledger
+const MovePerson = ({ person, ledgers, onDone, onError }) => {
+  const updatePerson = useUpdatePerson();
+  const targets = ledgers.filter(l => l.id !== person.ledger.id);
+
+  if (targets.length === 0) {
+    return (
+      <div className={styles.moveBox}>
+        <span className={styles.confirmText}>Create another ledger first, from the People page.</span>
+        <button className={styles.textBtn} onClick={onDone}>OK</button>
+      </div>
+    );
+  }
+
+  const move = async (ledgerId) => {
+    try {
+      await updatePerson.mutateAsync({ id: person.id, changes: { ledgerId } });
+      onDone();
+    } catch (err) {
+      onError(err.message || 'Couldn\'t move them. Try again.');
+    }
+  };
+
+  return (
+    <div className={styles.moveBox}>
+      <span className={styles.confirmText}>Move {person.name} and their history to:</span>
+      <div className={styles.moveTargets}>
+        {targets.map(l => (
+          <button key={l.id} className={styles.moveTarget} onClick={() => move(l.id)} disabled={updatePerson.isPending}>
+            {l.name}
+          </button>
+        ))}
+      </div>
+      <button className={styles.textBtn} onClick={onDone}>Cancel</button>
+    </div>
+  );
+};
+
 const PersonPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = usePerson(id);
-  const { data: peopleData } = usePeople();
+  const { data: ledgers } = useLedgers();
+  const { data: peopleData } = usePeople(data?.person?.ledger?.id);
   const deleteEntry = useDeleteEntry();
   const deleteSettlement = useDeleteSettlement();
   const updatePerson = useUpdatePerson();
@@ -128,6 +170,7 @@ const PersonPage = () => {
   const [sheet, setSheet] = useState(null); // 'entry' | 'settle' | null
   const [expandedId, setExpandedId] = useState(null);
   const [renaming, setRenaming] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [notice, setNotice] = useState('');
 
   const person = data?.person;
@@ -152,7 +195,7 @@ const PersonPage = () => {
   const handleArchive = async () => {
     try {
       await updatePerson.mutateAsync({ id: person.id, changes: { archived: true } });
-      navigate('/people');
+      navigate(`/people?ledger=${person.ledger.id}`);
     } catch (err) {
       setNotice(err.message || 'Couldn\'t archive. Try again.');
     }
@@ -162,8 +205,17 @@ const PersonPage = () => {
     <div className={page.root}>
       <div className={page.app}>
         <header className={styles.personHeader}>
-          <Link to="/people" className={styles.back} aria-label="Back to people">‹</Link>
-          <h1 className={styles.personTitle}>{person?.name ?? ' '}</h1>
+          <Link
+            to={person ? `/people?ledger=${person.ledger.id}` : '/people'}
+            className={styles.back}
+            aria-label={person ? `Back to ${person.ledger.name}` : 'Back to people'}
+          >
+            ‹
+          </Link>
+          <div className={styles.personHeading}>
+            <h1 className={styles.personTitle}>{person?.name ?? ' '}</h1>
+            {person && <span className={styles.personLedger}>in {person.ledger.name}</span>}
+          </div>
         </header>
 
         {isLoading ? (
@@ -180,6 +232,22 @@ const PersonPage = () => {
             <section className={styles.summary} aria-label="Balance">
               <div className={styles.summaryLabel}>{balanceHeading(person.name, person.balance)}</div>
               {person.balance !== 0 && <div className={styles.summaryAmount}>{formatRupees(person.balance)}</div>}
+              {person.groupBalances?.length > 0 && (
+                <ul className={styles.breakdown} aria-label="Balance by source">
+                  {person.directBalance !== 0 && (
+                    <li className={styles.breakdownRow}>
+                      <span>Direct</span>
+                      <span className={styles.breakdownAmount}>{signed(person.directBalance)}</span>
+                    </li>
+                  )}
+                  {person.groupBalances.map(g => (
+                    <li key={g.groupId} className={styles.breakdownRow}>
+                      <Link to={`/groups/${g.groupId}`}><span aria-hidden="true">{g.emoji || '👥'}</span> {g.name}</Link>
+                      <span className={styles.breakdownAmount}>{signed(g.balance)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <div className={styles.summaryActions}>
                 {person.balance !== 0 && !person.archived && (
                   <button className={styles.heroBtn} onClick={() => setSheet('settle')}>Settle up</button>
@@ -231,9 +299,17 @@ const PersonPage = () => {
               <section className={styles.manage}>
                 {renaming ? (
                   <RenamePerson person={person} onDone={() => setRenaming(false)} />
+                ) : moving ? (
+                  <MovePerson
+                    person={person}
+                    ledgers={ledgers ?? []}
+                    onDone={() => setMoving(false)}
+                    onError={message => { setMoving(false); setNotice(message); }}
+                  />
                 ) : (
                   <>
                     <button className={styles.textBtn} onClick={() => setRenaming(true)}>Rename</button>
+                    <button className={styles.textBtn} onClick={() => setMoving(true)}>Move to…</button>
                     {person.balance === 0 && (
                       <button className={styles.textBtn} onClick={handleArchive} disabled={updatePerson.isPending}>
                         Archive {person.name}
@@ -252,6 +328,7 @@ const PersonPage = () => {
       {sheet === 'entry' && person && (
         <EntrySheet
           person={person}
+          ledgerId={person.ledger.id}
           people={peopleData?.people}
           onClose={() => setSheet(null)}
           onSaved={({ shareNotAdded }) => {

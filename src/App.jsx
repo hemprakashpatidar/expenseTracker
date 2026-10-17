@@ -10,6 +10,11 @@ import Register from './features/auth/Register.jsx';
 import TransactionsPage from './features/transactions/TransactionsPage.jsx';
 import PeoplePage from './features/ledger/PeoplePage.jsx';
 import PersonPage from './features/ledger/PersonPage.jsx';
+import GroupsPage from './features/groups/GroupsPage.jsx';
+import GroupPage from './features/groups/GroupPage.jsx';
+import SharedGroupPage from './features/groups/SharedGroupPage.jsx';
+import SharedWithMePage from './features/groups/SharedWithMePage.jsx';
+import InvitePage from './features/groups/InvitePage.jsx';
 import AppLayout from './shared/AppLayout.jsx';
 
 // Signed-out visitors go to /login and come back to where they were headed afterwards
@@ -29,10 +34,16 @@ export const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
     <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
+    {/* Public, read-only: works whether or not you're signed in */}
+    <Route path="/shared/:token" element={<SharedGroupPage />} />
+    <Route path="/invite/:token" element={<InvitePage />} />
     <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
       <Route path="/" element={<TransactionsPage />} />
       <Route path="/people" element={<PeoplePage />} />
       <Route path="/people/:id" element={<PersonPage />} />
+      <Route path="/groups" element={<GroupsPage />} />
+      <Route path="/groups/:id" element={<GroupPage />} />
+      <Route path="/groups/shared/:id" element={<SharedWithMePage />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>

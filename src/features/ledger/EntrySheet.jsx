@@ -24,9 +24,10 @@ const resolve = (selected, custom) => (selected === CUSTOM ? custom.trim() : sel
 const rupees = (paise) => `₹${formatAmount(paise / 100)}`;
 
 // A new ledger entry with one person: split a bill, money lent, or money borrowed.
-// `person` fixes who it's with (from their page); otherwise you pick, or add someone new.
+// `person` fixes who it's with (from their page); otherwise you pick, or add someone new
+// to `ledgerId`.
 // onSaved({ shareNotAdded }) runs before closing, so the page can show a notice.
-const EntrySheet = ({ people = [], person, onClose, onSaved }) => {
+const EntrySheet = ({ people = [], person, ledgerId, onClose, onSaved }) => {
   const createEntry = useCreateEntry();
   const createPerson = useCreatePerson();
   const lastPayment = getLastPaymentMethod() || 'UPI';
@@ -93,7 +94,7 @@ const EntrySheet = ({ people = [], person, onClose, onSaved }) => {
     try {
       let personId = person?.id || form.personId;
       if (personId === CUSTOM) {
-        personId = (await createPerson.mutateAsync(form.newPersonName.trim())).id;
+        personId = (await createPerson.mutateAsync({ name: form.newPersonName.trim(), ledgerId })).id;
         // If the entry below fails, a retry uses this person instead of creating them again
         setForm(prev => ({ ...prev, personId, newPersonName: '' }));
       }

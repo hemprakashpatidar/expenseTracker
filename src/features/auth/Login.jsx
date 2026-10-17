@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useAuth } from './useAuth.js';
 import styles from './AuthForm.module.css';
 
@@ -9,6 +9,8 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  // Where to go after signing in (e.g. an invite link); passed on if they switch to Register
+  const { state } = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,7 +82,7 @@ const Login = () => {
 
           <div className={styles.switchRow}>
             Don't have an account?{' '}
-            <Link to="/register" className={styles.switchButton}>
+            <Link to="/register" state={state} className={styles.switchButton}>
               Create one here
             </Link>
           </div>
