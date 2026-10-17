@@ -9,6 +9,7 @@ import { positionHeading, memberPosition } from './format.js';
 import GroupExpenseSheet from './GroupExpenseSheet.jsx';
 import GroupSettleSheet from './GroupSettleSheet.jsx';
 import ShareLinkCard from './ShareLinkCard.jsx';
+import InviteMembersCard from './InviteMembersCard.jsx';
 import skeleton from '../../shared/Skeleton.module.css';
 import page from '../../shared/Page.module.css';
 import ledgerStyles from '../ledger/Ledger.module.css';
@@ -301,6 +302,8 @@ const GroupPage = () => {
                 ))
               )}
             </section>
+
+            <InviteMembersCard group={group} />
 
             <ShareLinkCard group={group} />
 

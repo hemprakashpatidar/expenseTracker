@@ -36,3 +36,13 @@ export const getShareLink = (groupId) => apiGet(`/api/groups/${groupId}/share`).
 export const createShareLink = (groupId) => apiPost(`/api/groups/${groupId}/share`).then(parse);
 
 export const revokeShareLink = (groupId) => apiDelete(`/api/groups/${groupId}/share`).then(parse);
+
+// Member invites (owner): { invite: { active, expired, token?, expiresAt, needsNewLink }, members: [{ personId, name, claimedBy }] }
+export const getInvites = (groupId) => apiGet(`/api/groups/${groupId}/invite`).then(parse);
+
+// A fresh 14-day link; the old one stops working (people who joined keep access)
+export const createInvite = (groupId) => apiPost(`/api/groups/${groupId}/invite`).then(parse);
+
+export const revokeInvite = (groupId) => apiDelete(`/api/groups/${groupId}/invite`).then(parse);
+
+export const removeAccess = (groupId, personId) => apiDelete(`/api/groups/${groupId}/access/${personId}`).then(parse);

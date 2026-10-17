@@ -8,7 +8,7 @@ import { formatShortDate } from '../../shared/dates.js';
 import { cx } from '../../shared/cx.js';
 import { formatRupees, balanceTone } from '../ledger/balance.js';
 import { groupPosition } from './format.js';
-import { useGroups } from './queries.js';
+import { useGroups, useSharedWithMe } from './queries.js';
 import NewGroupSheet from './NewGroupSheet.jsx';
 import skeleton from '../../shared/Skeleton.module.css';
 import page from '../../shared/Page.module.css';
@@ -35,6 +35,7 @@ const GroupsPage = () => {
   const { logout } = useAuth();
   const currentUser = getAuthData();
   const { data: groups = [], isLoading, isError, error, refetch } = useGroups();
+  const { data: sharedGroups = [] } = useSharedWithMe();
   const [creating, setCreating] = useState(false);
 
   const owedToYou = groups.reduce((sum, g) => sum + Math.max(g.myNet, 0), 0);
@@ -92,6 +93,28 @@ const GroupsPage = () => {
             </ul>
           )}
         </section>
+
+        {sharedGroups.length > 0 && (
+          <section className={ledgerStyles.card} aria-labelledby="shared-with-you-heading">
+            <div className={ledgerStyles.cardHeader}>
+              <h2 id="shared-with-you-heading" className={ledgerStyles.cardTitle}>Shared with you</h2>
+            </div>
+            <ul className={ledgerStyles.people}>
+              {sharedGroups.map(g => (
+                <li key={g.id}>
+                  <Link to={`/groups/shared/${g.id}`} className={styles.groupCard}>
+                    <span className={styles.groupEmoji} aria-hidden="true">{g.emoji || '👥'}</span>
+                    <span className={ledgerStyles.personInfo}>
+                      <span className={ledgerStyles.personName}>{g.name}</span>
+                      <span className={ledgerStyles.personMeta}>From {g.sharedBy} · you're {g.joinedAs}</span>
+                    </span>
+                    <span className={cx(ledgerStyles.balance, ledgerStyles[balanceTone(g.myNet)])}>{groupPosition(g.myNet)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <Fab label="New group" onClick={() => setCreating(true)} />

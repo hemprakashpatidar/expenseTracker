@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useAuth } from './useAuth.js';
 import styles from './AuthForm.module.css';
 
@@ -14,6 +14,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, register } = useAuth();
+  // Where to go after signing up (e.g. an invite link); passed on if they switch to Login
+  const { state } = useLocation();
 
   // Password strength validation
   const validatePasswordStrength = (password) => {
@@ -234,7 +236,7 @@ const Register = () => {
 
           <div className={styles.switchRow}>
             Already have an account?{' '}
-            <Link to="/login" className={styles.switchButton}>
+            <Link to="/login" state={state} className={styles.switchButton}>
               Sign in here
             </Link>
           </div>

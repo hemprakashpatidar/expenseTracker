@@ -251,3 +251,14 @@
   color: var(--text-muted);
   padding: 8px 12px;
 }
+
+/* ── Member invites ── */
+.inviteActions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inviteActions a { text-decoration: none; display: inline-flex; align-items: center; }
+.accessRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 2px;
+}
+.accessConfirm { display: inline-flex; gap: 4px; flex-shrink: 0; }

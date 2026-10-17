@@ -11,7 +11,12 @@ import {
   getShareLink,
   createShareLink,
   revokeShareLink,
+  getInvites,
+  createInvite,
+  revokeInvite,
+  removeAccess,
 } from '../../api/groups.js';
+import { previewInvite, claimInvite, listSharedWithMe, getSharedWithMe, leaveSharedGroup } from '../../api/invites.js';
 import { getSharedGroup } from '../../api/shared.js';
 import { listPeople } from '../../api/ledger.js';
 import { peopleKeys, ledgerKeys } from '../ledger/queries.js';
@@ -22,6 +27,9 @@ export const groupKeys = {
   list: () => ['groups', 'list'],
   detail: (id) => ['groups', 'detail', id],
   share: (id) => ['groups', 'share', id],
+  invites: (id) => ['groups', 'invites', id],
+  sharedWithMe: () => ['groups', 'shared-with-me'],
+  sharedWithMeDetail: (id) => ['groups', 'shared-with-me', id],
 };
 
 export const useGroups = () => useQuery({ queryKey: groupKeys.list(), queryFn: listGroups });
@@ -94,3 +102,54 @@ export const useSharedGroup = (token) => useQuery({
   queryFn: () => getSharedGroup(token),
   retry: false,
 });
+
+// ── Member invites (owner) ──
+
+export const useInvites = (groupId) => useQuery({ queryKey: groupKeys.invites(groupId), queryFn: () => getInvites(groupId) });
+
+const useInviteMutation = (mutationFn) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: (_, variables) => {
+      const groupId = typeof variables === 'string' ? variables : variables.groupId;
+      queryClient.invalidateQueries({ queryKey: groupKeys.invites(groupId) });
+    },
+  });
+};
+
+export const useCreateInvite = () => useInviteMutation(createInvite);
+export const useRevokeInvite = () => useInviteMutation(revokeInvite);
+export const useRemoveAccess = () => useInviteMutation(({ groupId, personId }) => removeAccess(groupId, personId));
+
+// ── Invitee ──
+
+export const useInvitePreview = (token) => useQuery({
+  queryKey: ['invite-preview', token],
+  queryFn: () => previewInvite(token),
+  retry: false,
+});
+
+export const useClaimInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ token, memberRef }) => claimInvite(token, memberRef),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: groupKeys.sharedWithMe() }),
+  });
+};
+
+export const useSharedWithMe = () => useQuery({ queryKey: groupKeys.sharedWithMe(), queryFn: listSharedWithMe });
+
+export const useSharedWithMeGroup = (groupId) => useQuery({
+  queryKey: groupKeys.sharedWithMeDetail(groupId),
+  queryFn: () => getSharedWithMe(groupId),
+  retry: false,
+});
+
+export const useLeaveSharedGroup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: leaveSharedGroup,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: groupKeys.sharedWithMe() }),
+  });
+};
