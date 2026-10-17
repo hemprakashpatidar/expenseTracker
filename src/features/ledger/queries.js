@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  listLedgers,
+  createLedger,
+  updateLedger,
   listPeople,
   getPerson,
   createPerson,
@@ -11,13 +14,22 @@ import {
 } from '../../api/ledger.js';
 import { transactionKeys } from '../transactions/queries.js';
 
+export const ledgerKeys = { all: ['ledgers'] };
+
 export const peopleKeys = {
   all: ['people'],
-  list: () => ['people', 'list'],
+  list: (ledgerId) => ['people', 'list', ledgerId],
   detail: (id) => ['people', 'detail', id],
 };
 
-export const usePeople = () => useQuery({ queryKey: peopleKeys.list(), queryFn: () => listPeople() });
+export const useLedgers = () => useQuery({ queryKey: ledgerKeys.all, queryFn: listLedgers });
+
+// Waits for a ledger id, so the list never flashes the server's default ledger first
+export const usePeople = (ledgerId) => useQuery({
+  queryKey: peopleKeys.list(ledgerId),
+  queryFn: () => listPeople({ ledgerId }),
+  enabled: Boolean(ledgerId),
+});
 
 export const usePerson = (id) => useQuery({ queryKey: peopleKeys.detail(id), queryFn: () => getPerson(id) });
 
@@ -29,6 +41,8 @@ const useLedgerMutation = (mutationFn, { touchesExpenses = () => false } = {}) =
     mutationFn,
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: peopleKeys.all });
+      // Ledger totals in the switcher come from the same balances
+      queryClient.invalidateQueries({ queryKey: ledgerKeys.all });
       // "Add my share" creates (and deleting removes) a normal expense too
       if (touchesExpenses(result, variables)) {
         queryClient.invalidateQueries({ queryKey: transactionKeys.all });
@@ -37,7 +51,11 @@ const useLedgerMutation = (mutationFn, { touchesExpenses = () => false } = {}) =
   });
 };
 
-export const useCreatePerson = () => useLedgerMutation(createPerson);
+export const useCreatePerson = () => useLedgerMutation(({ name, ledgerId }) => createPerson(name, ledgerId));
+
+export const useCreateLedger = () => useLedgerMutation(createLedger);
+
+export const useUpdateLedger = () => useLedgerMutation(({ id, changes }) => updateLedger(id, changes));
 
 export const useUpdatePerson = () => useLedgerMutation(({ id, changes }) => updatePerson(id, changes));
 

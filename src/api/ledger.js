@@ -1,13 +1,29 @@
 import { apiGet, apiPost, apiPatch, apiDelete, parse } from './client.js';
 
-// { people: [{ id, name, archived, balance, lastActivityOn }], totals: { owedToYou, youOwe } }
-// balance > 0: they owe you; < 0: you owe them
-export const listPeople = ({ includeArchived = false } = {}) =>
-  apiGet(`/api/people${includeArchived ? '?includeArchived=true' : ''}`).then(parse);
+// [{ id, name, archived, peopleCount, totals: { owedToYou, youOwe } }], oldest first
+export const listLedgers = () => apiGet('/api/ledgers').then(parse).then(data => data.ledgers);
 
-export const createPerson = (name) =>
-  apiPost('/api/people', { name }).then(parse).then(data => data.person);
+export const createLedger = (name) =>
+  apiPost('/api/ledgers', { name }).then(parse).then(data => data.ledger);
 
+// { name?, archived? }
+export const updateLedger = (id, changes) =>
+  apiPatch(`/api/ledgers/${id}`, changes).then(parse).then(data => data.ledger);
+
+// { ledger, people: [{ id, name, ledger, archived, balance, lastActivityOn }], totals: { owedToYou, youOwe } }
+// balance > 0: they owe you; < 0: you owe them. Without ledgerId the server uses your default ledger.
+export const listPeople = ({ ledgerId, includeArchived = false } = {}) => {
+  const params = new URLSearchParams();
+  if (ledgerId) params.set('ledgerId', ledgerId);
+  if (includeArchived) params.set('includeArchived', 'true');
+  const qs = params.toString();
+  return apiGet(`/api/people${qs ? `?${qs}` : ''}`).then(parse);
+};
+
+export const createPerson = (name, ledgerId) =>
+  apiPost('/api/people', { name, ledgerId }).then(parse).then(data => data.person);
+
+// { name?, archived?, ledgerId? } — ledgerId moves them to another ledger
 export const updatePerson = (id, changes) =>
   apiPatch(`/api/people/${id}`, changes).then(parse).then(data => data.person);
 

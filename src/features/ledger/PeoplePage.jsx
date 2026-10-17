@@ -6,19 +6,21 @@ import AppHeader from '../../shared/AppHeader.jsx';
 import Fab from '../../shared/Fab.jsx';
 import { formatShortDate } from '../../shared/dates.js';
 import { cx } from '../../shared/cx.js';
-import { usePeople, useCreatePerson } from './queries.js';
+import { useLedgers, usePeople, useCreatePerson } from './queries.js';
+import { useSelectedLedger } from './useSelectedLedger.js';
+import LedgerSwitcher from './LedgerSwitcher.jsx';
 import { balanceShort, balanceTone, formatRupees } from './balance.js';
 import EntrySheet from './EntrySheet.jsx';
 import skeleton from '../../shared/Skeleton.module.css';
 import page from '../../shared/Page.module.css';
 import styles from './Ledger.module.css';
 
-// Indigo card with your overall position across everyone
-const LedgerSummary = ({ totals, isLoading }) => {
+// Indigo card with your position across everyone in this ledger
+const LedgerSummary = ({ ledgerName, totals, isLoading }) => {
   const net = totals ? totals.owedToYou - totals.youOwe : 0;
   return (
-    <section className={styles.summary} aria-label="Overall balance">
-      <div className={styles.summaryLabel}>Overall</div>
+    <section className={styles.summary} aria-label={`Balance in ${ledgerName || 'this ledger'}`}>
+      <div className={styles.summaryLabel}>{ledgerName ? `In ${ledgerName}` : 'Overall'}</div>
       {isLoading || !totals ? (
         <div className={cx(skeleton.block, styles.summarySkeleton)} />
       ) : (
@@ -37,7 +39,7 @@ const LedgerSummary = ({ totals, isLoading }) => {
   );
 };
 
-const AddPerson = ({ onDone }) => {
+const AddPerson = ({ ledgerId, onDone }) => {
   const createPerson = useCreatePerson();
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -46,7 +48,7 @@ const AddPerson = ({ onDone }) => {
     e.preventDefault();
     if (!name.trim()) { setError('Enter a name.'); return; }
     try {
-      await createPerson.mutateAsync(name.trim());
+      await createPerson.mutateAsync({ name: name.trim(), ledgerId });
       onDone();
     } catch (err) {
       setError(err.message || 'Couldn\'t add them. Try again.');
@@ -92,7 +94,15 @@ const PersonRow = ({ person }) => {
 const PeoplePage = () => {
   const { logout } = useAuth();
   const currentUser = getAuthData();
-  const { data, isLoading, isError, error, refetch } = usePeople();
+  const ledgersQuery = useLedgers();
+  const { ledgerId, ledger, select } = useSelectedLedger(ledgersQuery.data);
+  const peopleQuery = usePeople(ledgerId);
+  const data = peopleQuery.data;
+  // The list waits for ledgers first, then for that ledger's people
+  const isLoading = ledgersQuery.isLoading || (Boolean(ledgerId) && peopleQuery.isLoading);
+  const isError = ledgersQuery.isError || peopleQuery.isError;
+  const error = ledgersQuery.error || peopleQuery.error;
+  const refetch = () => (ledgersQuery.isError ? ledgersQuery.refetch() : peopleQuery.refetch());
   const [adding, setAdding] = useState(false);
   const [entryOpen, setEntryOpen] = useState(false);
   const [notice, setNotice] = useState('');
@@ -104,7 +114,11 @@ const PeoplePage = () => {
       <div className={page.app}>
         <AppHeader title="People" userName={currentUser?.userName} onLogout={logout} />
 
-        <LedgerSummary totals={data?.totals} isLoading={isLoading} />
+        {!ledgersQuery.isError && (
+          <LedgerSwitcher ledgers={ledgersQuery.data ?? []} current={ledger} onSelect={select} />
+        )}
+
+        <LedgerSummary ledgerName={ledger?.name} totals={data?.totals} isLoading={isLoading} />
 
         {notice && (
           <div className={styles.notice} role="status">
@@ -123,7 +137,7 @@ const PeoplePage = () => {
             )}
           </div>
 
-          {adding && <AddPerson onDone={() => setAdding(false)} />}
+          {adding && <AddPerson ledgerId={ledgerId} onDone={() => setAdding(false)} />}
 
           {isLoading ? (
             <div className={styles.rowsSkeleton}>
@@ -139,7 +153,7 @@ const PeoplePage = () => {
               <div className={styles.empty}>
                 <div className={styles.emptyIcon} aria-hidden="true">🤝</div>
                 <div className={styles.emptyTitle}>Keep track of who owes who</div>
-                <div>Add a friend, then record money you lend, borrow, or split a bill with.</div>
+                <div>Add someone to {ledger?.name ?? 'this ledger'}, then record money you lend, borrow, or split a bill with.</div>
                 <button className={styles.primaryBtn} onClick={() => setAdding(true)}>Add your first person</button>
               </div>
             )
@@ -151,11 +165,12 @@ const PeoplePage = () => {
         </section>
       </div>
 
-      <Fab label="New entry" onClick={() => setEntryOpen(true)} />
+      {ledgerId && <Fab label="New entry" onClick={() => setEntryOpen(true)} />}
 
       {entryOpen && (
         <EntrySheet
           people={people}
+          ledgerId={ledgerId}
           onClose={() => setEntryOpen(false)}
           onSaved={({ shareNotAdded }) => {
             if (shareNotAdded) setNotice('Saved. Your share couldn\'t be added to your expenses, so add it there by hand.');
