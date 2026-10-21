@@ -1,4 +1,6 @@
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// pdf.js's legacy build: the modern one relies on features iOS WebKit lacks (async-iterable
+// streams, Promise.withResolvers), which made PDF import fail on iPhones in every browser
+import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { todayISO } from '../../shared/dates.js';
 import { guessCategory } from '../../shared/guessCategory.js';
 
@@ -153,11 +155,12 @@ export const parsePDFText = (allText) => {
   return rows;
 };
 
-export const extractPDFText = async (file) => {
-  const pdfjsLib = await import('pdfjs-dist');
+// Takes the file's bytes, not the File: read them as soon as the file is picked (see
+// ImportTransactions), because iOS can release the picked file during the library download
+export const extractPDFText = async (bytes) => {
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
   pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
   let text = '';
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);

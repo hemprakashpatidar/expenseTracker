@@ -19,21 +19,27 @@ const ImportTransactions = ({ onClose, onImported }) => {
 
   const handleFile = async (file) => {
     if (!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['csv', 'pdf'].includes(ext)) {
+    // By type as well as name: files shared from Drive or Downloads on Android can arrive
+    // without an extension
+    const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+    const kind = file.type === 'application/pdf' || ext === 'pdf' ? 'pdf'
+      : ['text/csv', 'application/vnd.ms-excel', 'text/comma-separated-values'].includes(file.type) || ext === 'csv' ? 'csv'
+      : null;
+    if (!kind) {
       setParseError('Only CSV and PDF files are supported.');
       return;
     }
     setParsing(true);
     setParseError('');
     try {
+      // Read the file first, before any other await: on iOS (seen in Brave) the picked file
+      // can be released while the PDF library downloads ("The object can not be found here")
+      const contents = kind === 'csv' ? await file.text() : await file.arrayBuffer();
       let parsed = [];
-      if (ext === 'csv') {
-        const text = await file.text();
-        parsed = parseCSV(text);
+      if (kind === 'csv') {
+        parsed = parseCSV(contents);
       } else {
-        const text = await extractPDFText(file);
-        parsed = parsePDFText(text);
+        parsed = parsePDFText(await extractPDFText(contents));
       }
       if (parsed.length === 0) {
         setParseError('Could not detect any transactions. Make sure the file is a bank statement in CSV or PDF format.');
@@ -44,7 +50,7 @@ const ImportTransactions = ({ onClose, onImported }) => {
       setStep('review');
     } catch (err) {
       console.error(err);
-      setParseError('Failed to parse file. ' + (err.message || ''));
+      setParseError(`Couldn't read this file. ${err.message ? `(${err.message})` : 'Try exporting the statement again.'}`);
     } finally {
       setParsing(false);
     }
@@ -142,9 +148,13 @@ const ImportTransactions = ({ onClose, onImported }) => {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv,.pdf"
+                accept=".csv,.pdf,text/csv,application/pdf"
                 style={{ display: 'none' }}
-                onChange={(e) => handleFile(e.target.files[0])}
+                onChange={(e) => {
+                  const input = e.target;
+                  // Cleared only after reading, so you can pick the same file again after an error
+                  handleFile(input.files[0]).finally(() => { input.value = ''; });
+                }}
               />
               {parseError && <div className={styles.error} role="alert">{parseError}</div>}
               <div className={styles.help}>

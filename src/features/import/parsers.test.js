@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({ default: 'worker.js' }));
+vi.mock('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url', () => ({ default: 'worker.js' }));
 const { parseCSV, parsePDFText } = await import('./parsers.js');
 
 test('parses a bank CSV, detecting columns, delimiter and quoted commas', () => {
