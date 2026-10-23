@@ -5,6 +5,7 @@ import DateChoice from '../../shared/form/DateChoice.jsx';
 import { useCreateSettlement } from './queries.js';
 import { toPaise } from './split.js';
 import { formatRupees } from './balance.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import sheet from '../../shared/form/SheetForm.module.css';
 import styles from './Ledger.module.css';
 
@@ -30,6 +31,7 @@ const startingValues = (option) => ({
 
 // Record money handed over. Starts as "settle everything", in the direction that clears the balance.
 const SettleSheet = ({ person, onClose }) => {
+  useLockPageScroll();
   const createSettlement = useCreateSettlement();
   const options = settleOptions(person);
   const [scopeKey, setScopeKey] = useState(options[0].key);

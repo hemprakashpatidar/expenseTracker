@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { getCategoryIcon, getCategoryColor } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
 import { removeRecurringTemplate } from './storage.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import styles from './ManageRecurring.module.css';
 
 const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
+  useLockPageScroll();
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handleDelete = (templateId) => {

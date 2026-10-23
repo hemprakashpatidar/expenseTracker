@@ -3,6 +3,7 @@ import { todayISO } from '../../shared/dates.js';
 import ChoiceGroup from '../../shared/form/ChoiceGroup.jsx';
 import DateChoice from '../../shared/form/DateChoice.jsx';
 import { useAddGroupSettlement } from './queries.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import sheet from '../../shared/form/SheetForm.module.css';
 
 const amountText = (rupees) => (Number.isInteger(rupees) ? String(rupees) : rupees.toFixed(2));
@@ -10,6 +11,7 @@ const amountText = (rupees) => (Number.isInteger(rupees) ? String(rupees) : rupe
 // Money handed over between any two members. `preset` ({ from, to, amount }) comes from a
 // suggested payment, so recording it is one tap plus Save.
 const GroupSettleSheet = ({ group, members, preset, onClose }) => {
+  useLockPageScroll();
   const addSettlement = useAddGroupSettlement();
   const self = members.find(m => m.isSelf);
   const [from, setFrom] = useState(preset?.from ?? members.find(m => !m.isSelf)?.id);

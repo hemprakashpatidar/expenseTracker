@@ -28,10 +28,12 @@ const TransactionCard = ({
   const subtitle = showDate ? `${formatShortDate(t.date)} · ${t.category}` : t.category;
 
   const handleTouchStart = (e) => {
+    if (t.pending) return;
     touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, wasSwiped: false };
   };
 
   const handleTouchEnd = (e) => {
+    if (t.pending) return;
     const dx = e.changedTouches[0].clientX - touchRef.current.startX;
     const dy = Math.abs(e.changedTouches[0].clientY - touchRef.current.startY);
     if (dy > VERTICAL_SCROLL_PX) return;
@@ -44,7 +46,9 @@ const TransactionCard = ({
     }
   };
 
+  // A row that's still saving can't be opened, edited or deleted until the server has it
   const handleClick = () => {
+    if (t.pending) return;
     // A swipe also fires a click on touch devices; swallow it
     if (touchRef.current.wasSwiped) { touchRef.current.wasSwiped = false; return; }
     onTap();
@@ -59,8 +63,8 @@ const TransactionCard = ({
         🗑 Delete
       </div>
       <div
-        className={cx(styles.card, isExpanded && styles.expanded)}
-        style={{ borderLeftColor: color, transform: `translateX(${isSwiped ? -82 : 0}px)` }}
+        className={cx(styles.card, isExpanded && styles.expanded, t.pending && styles.pending)}
+        style={{ borderLeftColor: color, transform: `translateX(${isSwiped && !t.pending ? -82 : 0}px)` }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={handleClick}
@@ -70,9 +74,11 @@ const TransactionCard = ({
           className={styles.row}
           role="button"
           tabIndex={0}
-          aria-expanded={isExpanded}
-          aria-label={`${t.expense}, ₹${formatAmount(t.amount)}, ${subtitle}`}
+          aria-expanded={isExpanded && !t.pending}
+          aria-disabled={t.pending || undefined}
+          aria-label={`${t.expense}, ₹${formatAmount(t.amount)}, ${t.pending ? 'saving' : subtitle}`}
           onKeyDown={(e) => {
+            if (t.pending) return;
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); }
           }}
         >
@@ -81,13 +87,13 @@ const TransactionCard = ({
           </div>
           <div className={styles.info}>
             <div className={styles.name}>{t.expense}</div>
-            <div className={styles.meta}>{subtitle}</div>
+            <div className={styles.meta}>{t.pending ? 'Saving…' : subtitle}</div>
           </div>
           <div className={styles.amount}>₹{formatAmount(t.amount)}</div>
         </div>
 
         {/* Expanded details */}
-        {isExpanded && (
+        {isExpanded && !t.pending && (
           <div className={styles.details}>
             <div className={styles.chip}>
               <div className={styles.chipLabel}>Category</div>

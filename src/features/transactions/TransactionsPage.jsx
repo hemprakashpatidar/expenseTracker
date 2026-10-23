@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
 import { getAuthData } from '../auth/session.js';
 import { MONTH_NAMES } from '../../shared/constants.js';
@@ -19,11 +19,13 @@ import {
   useDeleteTransaction,
   useInvalidateTransactions,
   useLatestTransactions,
+  usePrefetchMonth,
 } from './queries.js';
 import { recentExpenses } from './addDefaults.js';
 import { deleteTransaction } from '../../api/transactions.js';
 import { useUndoableDelete } from './useUndoableDelete.js';
 import UndoToast from './UndoToast.jsx';
+import { cx } from '../../shared/cx.js';
 import { applyFilters, uniqueValues, totalByCategory } from './filtering.js';
 import ImportTransactions from '../import/ImportTransactions.jsx';
 import RecurringSuggestions from '../recurring/RecurringSuggestions.jsx';
@@ -49,6 +51,10 @@ const TransactionsPage = () => {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [deleteError, setDeleteError] = useState(false);
   const [addingRecurringId, setAddingRecurringId] = useState(null);
+  // A background save that failed: { transaction?, values, message }. The toast offers to
+  // reopen the form (`retrying`) with what was typed.
+  const [saveFailure, setSaveFailure] = useState(null);
+  const [retrying, setRetrying] = useState(null);
 
   const { data: loaded = [], isLoading, isError, refetch } = useMonthTransactions(month, year);
 
@@ -57,6 +63,18 @@ const TransactionsPage = () => {
   const previousMonth = previous.getMonth() + 1;
   const previousYear = previous.getFullYear();
   const { data: previousLoaded, isSuccess: previousReady } = useMonthTransactions(previousMonth, previousYear);
+
+  // Once this month and the last are in, quietly load the next ones you'd step to, so the
+  // month arrows rarely show a skeleton. Waiting first keeps them from slowing the screen you're on.
+  const prefetchMonth = usePrefetchMonth();
+  const monthReady = !isLoading && !isError;
+  useEffect(() => {
+    if (!monthReady || !previousReady) return;
+    const twoBack = new Date(year, month - 3, 1);
+    prefetchMonth(twoBack.getMonth() + 1, twoBack.getFullYear());
+    const next = new Date(year, month, 1);
+    if (next <= new Date()) prefetchMonth(next.getMonth() + 1, next.getFullYear());
+  }, [monthReady, previousReady, month, year, prefetchMonth]);
   const createMutation = useCreateTransaction();
   const updateMutation = useUpdateTransaction();
   const deleteMutation = useDeleteTransaction();
@@ -160,6 +178,35 @@ const TransactionsPage = () => {
 
   const closeModal = () => setModal(null);
 
+  // Forms close right away; if the save then fails, the toast lets you reopen it
+  const saveFailed = (failure) => (err) => {
+    console.error('Save failed', err);
+    setSaveFailure({
+      ...failure,
+      // fetch rejects with a TypeError when the request never reaches the server
+      message: err instanceof TypeError
+        ? 'Couldn\'t reach the server. Check your connection and try again.'
+        : err.message || 'Couldn\'t save this. Try again.',
+    });
+  };
+
+  const saveNew = (values) => createMutation.mutateAsync(values).catch(saveFailed({ values }));
+
+  const saveChanges = (transaction, values) =>
+    updateMutation.mutateAsync({ id: transaction.id, changes: values }).catch(saveFailed({ transaction, values }));
+
+  const retrySave = () => {
+    setRetrying(saveFailure);
+    setSaveFailure(null);
+  };
+
+  // The failure toast hides after a while; the expense itself is already back as it was
+  useEffect(() => {
+    if (!saveFailure) return;
+    const timer = setTimeout(() => setSaveFailure(null), 8000);
+    return () => clearTimeout(timer);
+  }, [saveFailure]);
+
   return (
     <>
       <div className={page.root}>
@@ -241,7 +288,7 @@ const TransactionsPage = () => {
       {modal === 'add' && (
         <TransactionForm
           recent={recentExpenses(latest)}
-          onSubmit={values => createMutation.mutateAsync(values)}
+          onSubmit={saveNew}
           onClose={closeModal}
         />
       )}
@@ -264,8 +311,18 @@ const TransactionsPage = () => {
       {editingTransaction && (
         <TransactionForm
           transaction={editingTransaction}
-          onSubmit={changes => updateMutation.mutateAsync({ id: editingTransaction.id, changes })}
+          onSubmit={values => saveChanges(editingTransaction, values)}
           onClose={() => setEditingTransaction(null)}
+        />
+      )}
+
+      {retrying && (
+        <TransactionForm
+          transaction={retrying.transaction}
+          draft={retrying.values}
+          initialError={retrying.message}
+          onSubmit={values => retrying.transaction ? saveChanges(retrying.transaction, values) : saveNew(values)}
+          onClose={() => setRetrying(null)}
         />
       )}
 
@@ -277,7 +334,17 @@ const TransactionsPage = () => {
         />
       )}
 
-      {deleteError && !undoableDelete.pending && (
+      {saveFailure && (
+        // Sits above the undo toast when both are showing
+        <div className={cx(styles.toast, undoableDelete.pending && styles.toastRaised)} role="alert">
+          <span className={styles.toastMessage}>
+            <span aria-hidden="true">⚠️</span> Couldn't save "{saveFailure.values.expense}"
+          </span>
+          <button className={styles.undoBtn} onClick={retrySave}>Try again</button>
+        </div>
+      )}
+
+      {deleteError && !undoableDelete.pending && !saveFailure && (
         <div className={styles.toast} role="alert">
           <span aria-hidden="true">⚠️</span> Couldn't delete. It's back in the list.
         </div>

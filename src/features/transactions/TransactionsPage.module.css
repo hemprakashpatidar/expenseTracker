@@ -1,4 +1,4 @@
-/* Delete error toast */
+/* Toasts: undo, delete error, save error */
 @keyframes toastIn {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -25,6 +25,7 @@
   white-space: nowrap;
   max-width: calc(100vw - 32px);
 }
+.toastRaised { bottom: calc(var(--tabbar-height) + 140px + env(safe-area-inset-bottom)); }
 .toastMessage {
   overflow: hidden;
   text-overflow: ellipsis;

@@ -11,6 +11,7 @@ import { CUSTOM } from '../../shared/form/customChoice.js';
 import { getLastPaymentMethod, saveLastPaymentMethod } from '../transactions/addDefaults.js';
 import { useCreateEntry, useCreatePerson } from './queries.js';
 import { previewSplit } from './split.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import sheet from '../../shared/form/SheetForm.module.css';
 import styles from './Ledger.module.css';
 
@@ -28,6 +29,7 @@ const rupees = (paise) => `₹${formatAmount(paise / 100)}`;
 // to `ledgerId`.
 // onSaved({ shareNotAdded }) runs before closing, so the page can show a notice.
 const EntrySheet = ({ people = [], person, ledgerId, onClose, onSaved }) => {
+  useLockPageScroll();
   const createEntry = useCreateEntry();
   const createPerson = useCreatePerson();
   const lastPayment = getLastPaymentMethod() || 'UPI';
