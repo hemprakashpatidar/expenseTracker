@@ -50,16 +50,24 @@ test('edit mode: pre-fills and keeps unknown values as custom', async () => {
   }));
 });
 
-test('shows the server error and stays open when saving fails', async () => {
+test('reopened after a failed save: shows why, with what was typed', () => {
+  const onSubmit = vi.fn();
   const onClose = vi.fn();
-  render(<TransactionForm onSubmit={vi.fn().mockRejectedValue(new Error('category: Category cannot contain commas'))} onClose={onClose} />);
-  fill('Amount', '5');
-  fill('Description', 'x');
-  // Category comes before Paid with, which also has an 'Other'
-  fireEvent.click(screen.getAllByRole('button', { name: 'Other' })[0]);
+  const draft = { expense: 'Tea', amount: 5, date: '2026-10-05', category: 'Other, misc', paymentMethod: 'UPI' };
+  render(<TransactionForm draft={draft} initialError="category: Category cannot contain commas" onSubmit={onSubmit} onClose={onClose} />);
+
+  expect(screen.getByText(/cannot contain commas/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Amount')).toHaveValue('5');
+  expect(screen.getByLabelText('Description')).toHaveValue('Tea');
+  expect(screen.getByLabelText('Enter custom category')).toHaveValue('Other, misc');
+  // Typing doesn't re-guess the category that was already chosen
+  fill('Description', 'Swiggy');
+  expect(screen.getByLabelText('Enter custom category')).toHaveValue('Other, misc');
+
+  fill('Enter custom category', 'Misc');
   fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
-  expect(await screen.findByText(/cannot contain commas/)).toBeInTheDocument();
-  expect(onClose).not.toHaveBeenCalled();
+  expect(onSubmit).toHaveBeenCalledWith({ expense: 'Swiggy', amount: 5, date: '2026-10-05', category: 'Misc', paymentMethod: 'UPI' });
+  expect(onClose).toHaveBeenCalled();
 });
 
 test('rejects a zero amount without calling the server', () => {

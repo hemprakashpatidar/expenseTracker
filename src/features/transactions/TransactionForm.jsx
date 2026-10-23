@@ -41,22 +41,24 @@ const initialValues = (transaction) => {
 const resolve = (selected, custom) => selected === CUSTOM ? (custom.trim() || 'Other') : selected;
 
 const TEXT = {
-  add: { title: <><span aria-hidden="true">💸</span> New expense</>, submit: <>Save expense</>, busy: 'Saving…', failed: 'Couldn\'t add the expense. Try again.' },
-  edit: { title: <span className={styles.titlePill}><span aria-hidden="true">✏️</span> Edit expense</span>, submit: <><span aria-hidden="true">💾</span> Save changes</>, busy: 'Saving…', failed: 'Couldn\'t save your changes. Try again.' },
+  add: { title: <><span aria-hidden="true">💸</span> New expense</>, submit: <>Save expense</> },
+  edit: { title: <span className={styles.titlePill}><span aria-hidden="true">✏️</span> Edit expense</span>, submit: <><span aria-hidden="true">💾</span> Save changes</> },
 };
 
 // Add and edit share one form; `transaction` switches it to edit mode.
-// onSubmit receives { expense, amount, date, category, paymentMethod } and should throw on failure.
+// onSubmit receives { expense, amount, date, category, paymentMethod }; the form closes straight
+// away and the page saves in the background.
+// `draft` and `initialError` reopen the form after a failed save, with what was typed and why it failed.
 // `recent` (add mode) are past expenses offered as one-tap shortcuts.
-const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
+const TransactionForm = ({ transaction, draft, initialError = '', recent = [], onSubmit, onClose }) => {
   const mode = transaction ? 'edit' : 'add';
   const text = TEXT[mode];
+  // Edit mode highlights fields that differ from the saved expense, so that stays the baseline
   const [initial] = useState(() => initialValues(transaction));
-  const [form, setForm] = useState(initial);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(() => draft ? initialValues(draft) : initial);
+  const [error, setError] = useState(initialError);
   // While adding, the category follows the description until you pick one yourself
-  const [categoryPicked, setCategoryPicked] = useState(mode === 'edit');
+  const [categoryPicked, setCategoryPicked] = useState(mode === 'edit' || Boolean(draft));
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -86,7 +88,7 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
     if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) set('amount', e.target.value);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
@@ -105,24 +107,15 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
     }
 
     const paymentMethod = resolve(form.paymentMethod, form.customPayment);
-    setLoading(true);
-    try {
-      await onSubmit({
-        expense: form.expense.trim(),
-        amount,
-        date: form.date,
-        category: resolve(form.category, form.customCategory),
-        paymentMethod,
-      });
-      if (mode === 'add') saveLastPaymentMethod(paymentMethod);
-      onClose();
-    } catch (err) {
-      // fetch rejects with a TypeError when the request never reaches the server
-      setError(err instanceof TypeError
-        ? 'Couldn\'t reach the server. Check your connection and try again.'
-        : err.message || text.failed);
-      setLoading(false);
-    }
+    onSubmit({
+      expense: form.expense.trim(),
+      amount,
+      date: form.date,
+      category: resolve(form.category, form.customCategory),
+      paymentMethod,
+    });
+    if (mode === 'add') saveLastPaymentMethod(paymentMethod);
+    onClose();
   };
 
   return (
@@ -148,7 +141,6 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
                     type="button"
                     className={styles.recentChip}
                     onClick={() => applyRecent(t)}
-                    disabled={loading}
                     aria-label={`Fill in ${t.expense}, ₹${formatAmount(t.amount)}, ${t.category}, ${t.paymentMethod}`}
                   >
                     <span aria-hidden="true">{getCategoryIcon(t.category)}</span>
@@ -174,7 +166,6 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
                 value={form.amount}
                 onChange={handleAmountChange}
                 placeholder="0"
-                disabled={loading}
                 autoFocus
               />
             </div>
@@ -189,7 +180,6 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
               value={form.expense}
               onChange={e => handleDescriptionChange(e.target.value)}
               placeholder="Swiggy dinner"
-              disabled={loading}
             />
           </div>
 
@@ -203,7 +193,6 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
             value={form.category}
             customValue={form.customCategory}
             customPlaceholder="Gym membership"
-            disabled={loading}
             onChange={value => {
               setCategoryPicked(true);
               setForm(prev => ({ ...prev, category: value, customCategory: value === CUSTOM ? prev.customCategory : '' }));
@@ -220,19 +209,18 @@ const TransactionForm = ({ transaction, recent = [], onSubmit, onClose }) => {
             value={form.paymentMethod}
             customValue={form.customPayment}
             customPlaceholder="Amazon Pay"
-            disabled={loading}
             onChange={value => setForm(prev => ({ ...prev, paymentMethod: value, customPayment: value === CUSTOM ? prev.customPayment : '' }))}
             onCustomChange={value => set('customPayment', value)}
           />
 
-          <DateChoice value={form.date} disabled={loading} onChange={value => set('date', value)} />
+          <DateChoice value={form.date} onChange={value => set('date', value)} />
 
           <div className={styles.actions}>
-            <button type="button" className={styles.cancel} onClick={onClose} disabled={loading}>
+            <button type="button" className={styles.cancel} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className={styles.submit} disabled={loading}>
-              {loading ? <><span className={styles.spinner} /> {text.busy}</> : text.submit}
+            <button type="submit" className={styles.submit}>
+              {text.submit}
             </button>
           </div>
         </form>

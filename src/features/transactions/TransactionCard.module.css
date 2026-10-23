@@ -36,6 +36,9 @@
 }
 .card:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
 .card.expanded { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
+/* Shown before the server has confirmed it */
+.card.pending { opacity: 0.6; cursor: default; }
+.card.pending:hover { box-shadow: var(--shadow-card); }
 
 .row {
   display: flex;
