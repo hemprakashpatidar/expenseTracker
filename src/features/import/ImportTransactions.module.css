@@ -14,7 +14,7 @@
   width: 100%; max-width: 480px;
   max-height: 92vh;
   display: flex; flex-direction: column;
-  animation: slideUp 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: slideUp 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); overscroll-behavior: contain;
   font-family: 'DM Sans', sans-serif;
   overflow: hidden;
 }

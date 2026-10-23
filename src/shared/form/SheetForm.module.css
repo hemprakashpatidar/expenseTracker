@@ -21,6 +21,8 @@
   max-height: 92vh;
   overflow-y: auto;
   animation: slideUp 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Scrolling past the end of the sheet doesn't carry on into the page */
+  overscroll-behavior: contain;
   font-family: 'DM Sans', sans-serif;
 }
 

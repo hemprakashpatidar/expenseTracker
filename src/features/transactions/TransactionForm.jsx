@@ -9,6 +9,7 @@ import { cx } from '../../shared/cx.js';
 import ChoiceGroup from '../../shared/form/ChoiceGroup.jsx';
 import DateChoice from '../../shared/form/DateChoice.jsx';
 import { CUSTOM } from '../../shared/form/customChoice.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import styles from '../../shared/form/SheetForm.module.css';
 
 // A value outside the known list is shown as the custom option with the text filled in
@@ -51,6 +52,7 @@ const TEXT = {
 // `draft` and `initialError` reopen the form after a failed save, with what was typed and why it failed.
 // `recent` (add mode) are past expenses offered as one-tap shortcuts.
 const TransactionForm = ({ transaction, draft, initialError = '', recent = [], onSubmit, onClose }) => {
+  useLockPageScroll();
   const mode = transaction ? 'edit' : 'add';
   const text = TEXT[mode];
   // Edit mode highlights fields that differ from the saved expense, so that stays the baseline

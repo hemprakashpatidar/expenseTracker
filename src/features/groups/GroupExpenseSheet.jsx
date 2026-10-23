@@ -11,6 +11,7 @@ import { CUSTOM } from '../../shared/form/customChoice.js';
 import { getLastPaymentMethod, saveLastPaymentMethod } from '../transactions/addDefaults.js';
 import { useAddGroupExpense } from './queries.js';
 import { previewGroupSplit } from './splitPreview.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import sheet from '../../shared/form/SheetForm.module.css';
 import ledgerStyles from '../ledger/Ledger.module.css';
 import styles from './Groups.module.css';
@@ -33,6 +34,7 @@ const evenPercents = (ids) => {
 };
 
 const GroupExpenseSheet = ({ group, members, onClose, onSaved }) => {
+  useLockPageScroll();
   const addExpense = useAddGroupExpense();
   const self = members.find(m => m.isSelf);
   const lastPayment = getLastPaymentMethod() || 'UPI';

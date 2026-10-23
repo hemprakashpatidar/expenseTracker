@@ -4,11 +4,13 @@ import { getCategoryIcon } from '../../shared/categoryStyle.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
 import { parseCSV, parsePDFText, extractPDFText } from './parsers.js';
 import { cx } from '../../shared/cx.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import styles from './ImportTransactions.module.css';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ImportTransactions = ({ onClose, onImported }) => {
+  useLockPageScroll();
   const fileRef = useRef(null);
   const [step, setStep] = useState('upload'); // upload | review | importing | done
   const [parsing, setParsing] = useState(false);

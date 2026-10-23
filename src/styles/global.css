@@ -127,6 +127,11 @@
 
 :root { --tabbar-height: 60px; }
 
+/* Room for the scrollbar is kept even when a sheet hides it, so the page doesn't shift sideways */
+html { scrollbar-gutter: stable; }
+html.sheet-open,
+html.sheet-open body { overflow: hidden; }
+
 body {
   background: var(--page);
   color: var(--text);

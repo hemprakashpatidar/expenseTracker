@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router';
 import { cx } from '../../shared/cx.js';
 import { useAllPeople, useCreateGroup } from './queries.js';
 import { GROUP_EMOJIS } from './emojis.js';
+import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
 import sheet from '../../shared/form/SheetForm.module.css';
 import ledgerStyles from '../ledger/Ledger.module.css';
 import styles from './Groups.module.css';
 
 // Name, emoji, members (from any ledger, or new names) and the simplify-debts switch
 const NewGroupSheet = ({ onClose }) => {
+  useLockPageScroll();
   const navigate = useNavigate();
   const createGroup = useCreateGroup();
   const { data: peopleData, isLoading } = useAllPeople();

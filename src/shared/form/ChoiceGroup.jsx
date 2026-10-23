@@ -6,20 +6,27 @@ import styles from './SheetForm.module.css';
 // One scrollable line of toggle chips, plus (when customOption is given) a "custom" option
 // that reveals a text field.
 // The selected chip is kept in view, including when the value changes from outside
-// (auto category, a Recent shortcut).
+// (auto category, a Recent shortcut). A chip that's already visible stays where it is, so the
+// row doesn't slide around under your finger or while you type.
 const ChoiceGroup = ({
   label, customLabel, options, renderOption, optionTitle, customOption,
   value, customValue, customPlaceholder, disabled, onChange, onCustomChange,
 }) => {
   const rowRef = useRef(null);
+  const firstRunRef = useRef(true);
 
   useEffect(() => {
     const row = rowRef.current;
     const selected = row?.querySelector('[aria-pressed="true"]');
+    const firstRun = firstRunRef.current;
+    firstRunRef.current = false;
     if (!row || !selected) return;
-    // Scroll only the row, never the sheet
-    const target = selected.offsetLeft - (row.clientWidth - selected.offsetWidth) / 2;
-    row.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    const left = selected.offsetLeft;
+    const right = left + selected.offsetWidth;
+    if (left >= row.scrollLeft && right <= row.scrollLeft + row.clientWidth) return;
+    // Scroll only the row, never the sheet; jump on open rather than animate under the slide-in
+    const target = left - (row.clientWidth - selected.offsetWidth) / 2;
+    row.scrollTo({ left: Math.max(0, target), behavior: firstRun ? 'auto' : 'smooth' });
   }, [value]);
 
   const choice = (key, content, title, ariaLabel) => (
