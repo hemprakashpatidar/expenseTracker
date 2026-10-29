@@ -1,4 +1,5 @@
 import { MONTH_NAMES } from '../../shared/constants.js';
+import Icon from '../../shared/Icon.jsx';
 import styles from './MonthNav.module.css';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -18,7 +19,7 @@ const shift = (month, year, delta) => {
   return { month: date.getMonth() + 1, year: date.getFullYear() };
 };
 
-// ‹ Oct 2026 ▾ ›  — a compact pill: the arrows step a month; tapping the name opens a native picker to jump
+// < Oct 2026 v >  — a compact pill: the arrows step a month; tapping the name opens a native picker to jump
 const MonthNav = ({ month, year, onChange }) => {
   const prev = shift(month, year, -1);
   const next = shift(month, year, 1);
@@ -33,12 +34,12 @@ const MonthNav = ({ month, year, onChange }) => {
         disabled={!canGoBack}
         aria-label={`Previous month, ${MONTH_NAMES[prev.month - 1]} ${prev.year}`}
       >
-        ‹
+        <Icon name="chevronLeft" />
       </button>
 
       <div className={styles.current}>
         <span className={styles.label} aria-hidden="true">
-          {MONTH_NAMES[month - 1].slice(0, 3)} {year} <span className={styles.caret}>▾</span>
+          {MONTH_NAMES[month - 1].slice(0, 3)} {year} <Icon name="chevronDown" size={14} strokeWidth={2.5} className={styles.caret} />
         </span>
         <select
           className={styles.select}
@@ -61,7 +62,7 @@ const MonthNav = ({ month, year, onChange }) => {
         disabled={!canGoForward}
         aria-label={`Next month, ${MONTH_NAMES[next.month - 1]} ${next.year}`}
       >
-        ›
+        <Icon name="chevronRight" />
       </button>
     </div>
   );

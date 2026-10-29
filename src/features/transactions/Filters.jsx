@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { getCategoryIcon, getCategoryLabel } from '../../shared/categoryStyle.js';
+import { getCategoryLabel } from '../../shared/categoryStyle.js';
 import { cx } from '../../shared/cx.js';
+import Icon from '../../shared/Icon.jsx';
+import CategoryIcon from '../../shared/CategoryIcon.jsx';
 import styles from './Filters.module.css';
 
 // Category chips are always visible; payment method sits behind its own chip
@@ -19,7 +21,7 @@ const Filters = ({ categories, paymentMethods, category, paymentMethod, onCatego
             aria-pressed={category === cat}
             title={cat === 'All' ? 'All categories' : cat}
           >
-            {cat === 'All' ? 'All' : <><span aria-hidden="true">{getCategoryIcon(cat)}</span> {getCategoryLabel(cat)}</>}
+            {cat === 'All' ? 'All' : <><CategoryIcon category={cat} /> {getCategoryLabel(cat)}</>}
           </button>
         ))}
         {hasPaymentChoice && (
@@ -28,7 +30,7 @@ const Filters = ({ categories, paymentMethods, category, paymentMethod, onCatego
             onClick={() => setShowPayments(open => !open)}
             aria-expanded={showPayments}
           >
-            <span aria-hidden="true">💳</span> {paymentMethod === 'All' ? 'Payment' : paymentMethod} <span aria-hidden="true">▾</span>
+            <Icon name="creditCard" size={16} /> {paymentMethod === 'All' ? 'Payment' : paymentMethod} <Icon name="chevronDown" size={14} strokeWidth={2.5} />
           </button>
         )}
       </div>

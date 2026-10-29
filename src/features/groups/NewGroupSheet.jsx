@@ -4,6 +4,7 @@ import { cx } from '../../shared/cx.js';
 import { useAllPeople, useCreateGroup } from './queries.js';
 import { GROUP_EMOJIS } from './emojis.js';
 import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
+import Icon from '../../shared/Icon.jsx';
 import sheet from '../../shared/form/SheetForm.module.css';
 import ledgerStyles from '../ledger/Ledger.module.css';
 import styles from './Groups.module.css';
@@ -69,7 +70,7 @@ const NewGroupSheet = ({ onClose }) => {
         <div className={sheet.handle} />
         <div className={sheet.header}>
           <div className={sheet.headerTitle}><span aria-hidden="true">{emoji}</span> New group</div>
-          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close">✕</button>
+          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
         </div>
 
         <form className={sheet.body} onSubmit={handleSubmit} noValidate>

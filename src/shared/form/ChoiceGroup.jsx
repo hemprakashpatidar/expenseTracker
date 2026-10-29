@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cx } from '../cx.js';
 import { CUSTOM } from './customChoice.js';
 import styles from './SheetForm.module.css';
@@ -14,13 +14,18 @@ const ChoiceGroup = ({
 }) => {
   const rowRef = useRef(null);
   const firstRunRef = useRef(true);
+  // While chips are hidden off the right edge, the row fades out there as a hint to scroll
+  const [moreRight, setMoreRight] = useState(false);
+  const updateMoreRight = (row) => setMoreRight(row.scrollLeft + row.clientWidth < row.scrollWidth - 4);
 
   useEffect(() => {
     const row = rowRef.current;
     const selected = row?.querySelector('[aria-pressed="true"]');
     const firstRun = firstRunRef.current;
     firstRunRef.current = false;
-    if (!row || !selected) return;
+    if (!row) return;
+    if (firstRun) updateMoreRight(row);
+    if (!selected) return;
     const left = selected.offsetLeft;
     const right = left + selected.offsetWidth;
     if (left >= row.scrollLeft && right <= row.scrollLeft + row.clientWidth) return;
@@ -47,7 +52,7 @@ const ChoiceGroup = ({
   return (
     <fieldset className={styles.fieldset}>
       <legend className={styles.label}>{label}</legend>
-      <div className={styles.chipRow} ref={rowRef}>
+      <div className={cx(styles.chipRow, moreRight && styles.moreRight)} ref={rowRef} onScroll={e => updateMoreRight(e.currentTarget)}>
         {options.map(option => choice(option, renderOption(option), optionTitle?.(option)))}
         {customOption && choice(CUSTOM, customOption, undefined, customLabel[0].toUpperCase() + customLabel.slice(1))}
       </div>

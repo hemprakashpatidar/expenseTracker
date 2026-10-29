@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router';
 import { cx } from './cx.js';
+import Icon from './Icon.jsx';
 import styles from './TabBar.module.css';
 
 const TABS = [
-  { to: '/', label: 'Expenses', icon: '💸', end: true },
-  { to: '/people', label: 'People', icon: '🤝' },
-  { to: '/groups', label: 'Groups', icon: '👥' },
+  { to: '/', label: 'Expenses', icon: 'wallet', end: true },
+  { to: '/people', label: 'People', icon: 'user' },
+  { to: '/groups', label: 'Groups', icon: 'users' },
 ];
 
 // Bottom navigation between the main sections; a tab stays active on its detail pages too
@@ -19,7 +20,7 @@ const TabBar = () => (
           end={tab.end}
           className={({ isActive }) => cx(styles.tab, isActive && styles.active)}
         >
-          <span className={styles.icon} aria-hidden="true">{tab.icon}</span>
+          <span className={styles.icon}><Icon name={tab.icon} size={22} /></span>
           <span className={styles.label}>{tab.label}</span>
         </NavLink>
       ))}

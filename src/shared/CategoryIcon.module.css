@@ -1,0 +1,20 @@
+.plain {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--category);
+}
+.tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--category);
+  background: color-mix(in srgb, var(--category) 12%, var(--surface));
+}
+/* Category colours are dark shades; lift them on dark surfaces */
+:global([data-theme='dark']) .plain,
+:global([data-theme='dark']) .tile { color: color-mix(in srgb, var(--category) 55%, white); }
+:global([data-theme='dark']) .tile { background: color-mix(in srgb, var(--category) 22%, var(--surface)); }

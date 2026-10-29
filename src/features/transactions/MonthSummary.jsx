@@ -1,20 +1,22 @@
 import { formatAmount } from '../../shared/formatters.js';
 import { cx } from '../../shared/cx.js';
+import Icon from '../../shared/Icon.jsx';
 import skeleton from '../../shared/Skeleton.module.css';
 import styles from './MonthSummary.module.css';
 
-// "12% less than this point in September", or nothing when there is no fair comparison
+// "12% less than Sep so far", or nothing when there is no fair comparison
 const Comparison = ({ total, previousTotal, previousMonthName, partialMonth }) => {
   if (previousTotal === null || previousTotal === undefined || previousTotal === 0) return null;
-  const than = partialMonth ? `this point in ${previousMonthName}` : previousMonthName;
+  const than = partialMonth ? `${previousMonthName.slice(0, 3)} so far` : previousMonthName;
   const percent = Math.round((Math.abs(total - previousTotal) / previousTotal) * 100);
 
-  if (percent === 0) return <div className={styles.comparison}>About the same as {than}</div>;
+  if (percent === 0) return <span className={styles.comparison}>About the same as {than}</span>;
   const less = total < previousTotal;
   return (
-    <div className={cx(styles.comparison, less ? styles.less : styles.more)}>
-      <span aria-hidden="true">{less ? '↓' : '↑'}</span> {percent}% {less ? 'less' : 'more'} than {than}
-    </div>
+    <span className={cx(styles.comparison, less ? styles.less : styles.more)}>
+      <Icon name={less ? 'trendingDown' : 'trendingUp'} size={14} strokeWidth={2.5} />
+      {percent}% {less ? 'less' : 'more'} than {than}
+    </span>
   );
 };
 
@@ -38,8 +40,10 @@ const MonthSummary = ({
     ) : (
       <>
         <div className={styles.amount}>₹{formatAmount(total)}</div>
-        <div className={styles.meta}>{count} {count === 1 ? 'expense' : 'expenses'}</div>
-        <Comparison total={total} previousTotal={previousTotal} previousMonthName={previousMonthName} partialMonth={partialMonth} />
+        <div className={styles.metaRow}>
+          <span className={styles.meta}>{count} {count === 1 ? 'expense' : 'expenses'}</span>
+          <Comparison total={total} previousTotal={previousTotal} previousMonthName={previousMonthName} partialMonth={partialMonth} />
+        </div>
         {filtersActive && (
           <div className={styles.filtered}>Showing ₹{formatAmount(shownTotal)} across {shownCount} with filters</div>
         )}

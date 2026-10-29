@@ -6,31 +6,35 @@
 /* One scrollable line of chips */
 .row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 2px 1px;
+  /* Runs to the screen edge, so it's clear the row scrolls */
+  margin-right: -16px;
+  padding: 2px 16px 2px 1px;
 }
 .row::-webkit-scrollbar { display: none; }
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
-  min-height: 34px;
-  padding: 6px 12px;
+  min-height: 40px;
+  padding: 0 14px;
   background: var(--surface);
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--border);
   border-radius: 999px;
-  box-shadow: var(--shadow-card);
   font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color 0.15s, background 0.15s;
+  /* 40px drawn, 44px to the finger */
+  position: relative;
 }
+.chip::after { content: ''; position: absolute; inset: -2px 0; }
 .chip:hover { border-color: var(--accent-soft-border); }
 .chip.active {
   background: var(--accent-soft);
@@ -38,4 +42,4 @@
   color: var(--accent-text);
 }
 .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.paymentToggle { border-color: var(--border); }
+.paymentToggle { border-style: dashed; }

@@ -30,6 +30,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.toast svg { flex-shrink: 0; }
+.toastMessage svg { vertical-align: -3px; margin-right: 4px; }
 .undoBtn {
   background: none;
   border: none;

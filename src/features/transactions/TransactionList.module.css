@@ -1,7 +1,7 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 .header {
   display: flex;
@@ -10,55 +10,80 @@
   padding: 0 2px;
 }
 .sectionLabel {
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  padding: 0 2px;
+  color: var(--text);
 }
 
-.sortButtons { display: flex; gap: 5px; }
-.sortBtn {
-  background: transparent;
-  border: 1.5px solid transparent;
-  border-radius: 12px;
-  padding: 6px 12px;
-  min-height: 32px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary);
+/* "Newest first": a text button with a native picker laid over it */
+.sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px 0 8px;
+  border-radius: 10px;
   font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-text);
   cursor: pointer;
 }
-.sortBtn.active {
-  background: var(--accent-soft);
-  border-color: var(--accent-soft-border);
-  color: var(--accent-text);
+.sort:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.sortSelect {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
 }
 
-.skLine { height: 13px; }
-.skDate { height: 11px; width: 35%; }
-.skAmount { height: 14px; width: 52px; }
+/* A day's expenses share one card */
+.group {
+  list-style: none;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.skRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 16px;
+}
+.skRow + .skRow { border-top: 1px solid var(--border-subtle); }
+.skIcon { width: 40px; height: 40px; border-radius: 12px; }
+.skLine { height: 14px; }
+.skDate { height: 12px; width: 35%; }
+.skAmount { height: 15px; width: 56px; }
 
 /* Empty and error states */
 .empty {
   background: var(--surface);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 32px 16px;
   text-align: center;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 14px;
   box-shadow: var(--shadow-card);
 }
-.emptyIcon { font-size: 32px; margin-bottom: 8px; }
-.emptyHint { font-size: 12px; margin-top: 5px; color: var(--text-muted); }
+.emptyIcon { display: block; margin: 0 auto 8px; color: var(--text-muted); }
+.emptyHint { font-size: 13px; margin-top: 5px; color: var(--text-muted); }
 .linkButton {
-  margin-top: 8px;
+  margin-top: 4px;
+  min-height: 44px;
+  padding: 0 8px;
   background: none;
   border: none;
   color: var(--accent-text);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
@@ -69,15 +94,16 @@
 .day {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
-.day + .day { margin-top: 6px; }
+.day + .day { margin-top: 8px; }
 .dayHeader {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 2px 4px 0;
-  font-size: 12px;
+  padding: 0 4px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-secondary);
 }
+.dayTotal { font-family: 'DM Mono', monospace; }

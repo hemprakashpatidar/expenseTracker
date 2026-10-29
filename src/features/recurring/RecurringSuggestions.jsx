@@ -1,4 +1,4 @@
-import { getCategoryIcon, getCategoryColor } from '../../shared/categoryStyle.js';
+import CategoryIcon from '../../shared/CategoryIcon.jsx';
 import { formatAmount } from '../../shared/formatters.js';
 import styles from './RecurringSuggestions.module.css';
 
@@ -27,9 +27,7 @@ const RecurringSuggestions = ({ suggestions, onConfirm, onSkip, addingId, allTem
       <div className={styles.items}>
         {suggestions.map(s => (
           <div key={s.id} className={styles.item}>
-            <div className={styles.icon} style={{ background: `${getCategoryColor(s.category)}18` }} aria-hidden="true">
-              {getCategoryIcon(s.category)}
-            </div>
+            <CategoryIcon category={s.category} size={18} tile />
 
             <div className={styles.info}>
               <div className={styles.name}>{s.expense}</div>

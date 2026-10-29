@@ -4,6 +4,7 @@ import ChoiceGroup from '../../shared/form/ChoiceGroup.jsx';
 import DateChoice from '../../shared/form/DateChoice.jsx';
 import { useAddGroupSettlement } from './queries.js';
 import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
+import Icon from '../../shared/Icon.jsx';
 import sheet from '../../shared/form/SheetForm.module.css';
 
 const amountText = (rupees) => (Number.isInteger(rupees) ? String(rupees) : rupees.toFixed(2));
@@ -50,7 +51,7 @@ const GroupSettleSheet = ({ group, members, preset, onClose }) => {
         <div className={sheet.handle} />
         <div className={sheet.header}>
           <div className={sheet.headerTitle}><span aria-hidden="true">✅</span> Record a payment</div>
-          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close">✕</button>
+          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
         </div>
 
         <form className={sheet.body} onSubmit={handleSubmit} noValidate>

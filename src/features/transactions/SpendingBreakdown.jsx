@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { getCategoryColor, getCategoryIcon, getCategoryLabel } from '../../shared/categoryStyle.js';
+import { getCategoryColor, getCategoryLabel } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
 import { cx } from '../../shared/cx.js';
+import Icon from '../../shared/Icon.jsx';
+import CategoryIcon from '../../shared/CategoryIcon.jsx';
 import styles from './SpendingBreakdown.module.css';
 
 const COLLAPSED_COUNT = 4;
+const LEGEND_COUNT = 3;
 const OPEN_STORAGE_KEY = 'expense_tracker_breakdown_open';
 
 const readOpen = () => {
@@ -14,8 +17,9 @@ const saveOpen = (open) => {
   try { localStorage.setItem(OPEN_STORAGE_KEY, String(open)); } catch { /* not saved; still works this visit */ }
 };
 
-// Spending by category, largest first. Collapsed (the default) it is one stacked bar plus the
-// top category; open, it lists a bar per category, and tapping one filters the list.
+// Spending by category, largest first. Collapsed (the default) it is one stacked bar with a
+// legend for the top categories; open, it lists a bar per category, and tapping one filters the list.
+// The legend names and percentages carry the meaning, so nothing depends on telling colours apart.
 const SpendingBreakdown = ({ breakdown, total, selectedCategory, onSelectCategory }) => {
   const [open, setOpen] = useState(readOpen);
   const [showAll, setShowAll] = useState(false);
@@ -24,8 +28,7 @@ const SpendingBreakdown = ({ breakdown, total, selectedCategory, onSelectCategor
 
   const visible = showAll ? entries : entries.slice(0, COLLAPSED_COUNT);
   const hiddenCount = entries.length - COLLAPSED_COUNT;
-  const [topCategory, { total: topAmount }] = entries[0];
-  const topPercent = Math.round((topAmount / total) * 100);
+  const percentOf = (amount) => Math.round((amount / total) * 100);
 
   const toggle = () => {
     saveOpen(!open);
@@ -36,32 +39,37 @@ const SpendingBreakdown = ({ breakdown, total, selectedCategory, onSelectCategor
     <section className={cx(styles.card, !open && styles.collapsed)} aria-label="Spending by category">
       <button className={styles.toggle} onClick={toggle} aria-expanded={open} aria-controls="spending-breakdown-list">
         <span className={styles.heading}>Where it went</span>
-        {!open && (
-          <span className={styles.topSummary}>
-            <span aria-hidden="true">{getCategoryIcon(topCategory)}</span> {getCategoryLabel(topCategory)} {topPercent}%
-          </span>
-        )}
-        <span className={cx(styles.chevron, open && styles.chevronOpen)} aria-hidden="true">▾</span>
+        <Icon name="chevronDown" size={18} className={cx(styles.chevron, open && styles.chevronOpen)} />
       </button>
 
-      {/* Collapsed: every category as a slice of one bar, so the split is still visible at a glance */}
+      {/* Collapsed: every category as a slice of one bar, plus a legend for the biggest ones */}
       {!open && (
-        <span className={styles.stacked} aria-hidden="true">
-          {entries.map(([category, { total: amount }]) => (
-            <span
-              key={category}
-              className={styles.slice}
-              style={{ flexGrow: amount, '--category': getCategoryColor(category) }}
-            />
-          ))}
-        </span>
+        <>
+          <span className={styles.stacked} aria-hidden="true">
+            {entries.map(([category, { total: amount }]) => (
+              <span
+                key={category}
+                className={styles.slice}
+                style={{ flexGrow: amount, '--category': getCategoryColor(category) }}
+              />
+            ))}
+          </span>
+          <ul className={styles.legend}>
+            {entries.slice(0, LEGEND_COUNT).map(([category, { total: amount }]) => (
+              <li key={category} className={styles.legendItem}>
+                <span className={styles.dot} style={{ '--category': getCategoryColor(category) }} aria-hidden="true" />
+                {getCategoryLabel(category)} <strong>{percentOf(amount)}%</strong>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {open && (
         <>
           <ul className={styles.rows} id="spending-breakdown-list">
             {visible.map(([category, { total: amount, count }]) => {
-              const percent = Math.round((amount / total) * 100);
+              const percent = percentOf(amount);
               const selected = selectedCategory === category;
               return (
                 <li key={category}>
@@ -73,7 +81,7 @@ const SpendingBreakdown = ({ breakdown, total, selectedCategory, onSelectCategor
                   >
                     <span className={styles.line}>
                       <span className={styles.name}>
-                        <span aria-hidden="true">{getCategoryIcon(category)}</span> {category}
+                        <CategoryIcon category={category} /> {category}
                       </span>
                       <span className={styles.value}>
                         ₹{formatAmount(Math.round(amount))} <span className={styles.percent}>{percent}%</span>

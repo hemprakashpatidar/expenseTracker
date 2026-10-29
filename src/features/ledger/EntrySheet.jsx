@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
-import { getCategoryIcon, getCategoryLabel } from '../../shared/categoryStyle.js';
+import { getCategoryLabel } from '../../shared/categoryStyle.js';
 import { matchCategory } from '../../shared/guessCategory.js';
 import { formatAmount } from '../../shared/formatters.js';
 import { todayISO } from '../../shared/dates.js';
@@ -12,6 +12,8 @@ import { getLastPaymentMethod, saveLastPaymentMethod } from '../transactions/add
 import { useCreateEntry, useCreatePerson } from './queries.js';
 import { previewSplit } from './split.js';
 import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
+import Icon from '../../shared/Icon.jsx';
+import CategoryIcon from '../../shared/CategoryIcon.jsx';
 import sheet from '../../shared/form/SheetForm.module.css';
 import styles from './Ledger.module.css';
 
@@ -140,7 +142,7 @@ const EntrySheet = ({ people = [], person, ledgerId, onClose, onSaved }) => {
           <div className={sheet.headerTitle}>
             {person ? <>New entry with {person.name}</> : <><span aria-hidden="true">🤝</span> New entry</>}
           </div>
-          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close">✕</button>
+          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
         </div>
 
         <form className={sheet.body} onSubmit={handleSubmit} noValidate>
@@ -274,7 +276,7 @@ const EntrySheet = ({ people = [], person, ledgerId, onClose, onSaved }) => {
                     label="Category"
                     customLabel="custom category"
                     options={CATEGORIES}
-                    renderOption={cat => <><span aria-hidden="true">{getCategoryIcon(cat)}</span> {getCategoryLabel(cat)}</>}
+                    renderOption={cat => <><CategoryIcon category={cat} /> {getCategoryLabel(cat)}</>}
                     optionTitle={cat => cat}
                     customOption={<><span aria-hidden="true">✏️</span> Custom</>}
                     value={form.category}

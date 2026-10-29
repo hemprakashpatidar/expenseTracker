@@ -6,6 +6,7 @@ import { useCreateSettlement } from './queries.js';
 import { toPaise } from './split.js';
 import { formatRupees } from './balance.js';
 import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
+import Icon from '../../shared/Icon.jsx';
 import sheet from '../../shared/form/SheetForm.module.css';
 import styles from './Ledger.module.css';
 
@@ -93,7 +94,7 @@ const SettleSheet = ({ person, onClose }) => {
         <div className={sheet.handle} />
         <div className={sheet.header}>
           <div className={sheet.headerTitle}><span aria-hidden="true">✅</span> Settle up with {person.name}</div>
-          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close">✕</button>
+          <button type="button" className={sheet.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
         </div>
 
         <form className={sheet.body} onSubmit={handleSubmit} noValidate>

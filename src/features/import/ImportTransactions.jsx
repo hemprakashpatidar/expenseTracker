@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { createTransaction } from '../../api/transactions.js';
-import { getCategoryIcon } from '../../shared/categoryStyle.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
 import { parseCSV, parsePDFText, extractPDFText } from './parsers.js';
 import { cx } from '../../shared/cx.js';
 import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
+import Icon from '../../shared/Icon.jsx';
 import styles from './ImportTransactions.module.css';
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ const ImportTransactions = ({ onClose, onImported }) => {
             <span aria-hidden="true">📥</span> Import transactions
           </div>
           {step !== 'importing' && (
-            <button className={styles.close} onClick={onClose} aria-label="Close">✕</button>
+            <button className={styles.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
           )}
         </div>
 
@@ -224,7 +224,7 @@ const ImportTransactions = ({ onClose, onImported }) => {
                           onChange={(e) => updateRow(i, 'category', e.target.value)}
                         >
                           {CATEGORIES.map(c => (
-                            <option key={c} value={c}>{getCategoryIcon(c)} {c}</option>
+                            <option key={c} value={c}>{c}</option>
                           ))}
                         </select>
                       </label>

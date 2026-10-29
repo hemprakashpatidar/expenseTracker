@@ -1,5 +1,6 @@
 import { todayISO, toISODate, formatShortDate } from '../dates.js';
 import { cx } from '../cx.js';
+import Icon from '../Icon.jsx';
 import styles from './SheetForm.module.css';
 
 const yesterdayISO = () => {
@@ -30,7 +31,7 @@ const DateChoice = ({ value, disabled, onChange }) => {
           Yesterday
         </button>
         <span className={cx(styles.chip, styles.pickChip, isOther && styles.selected)}>
-          <span aria-hidden="true">📅</span> {isOther ? formatShortDate(value) : 'Pick date'}
+          <Icon name="calendar" size={16} /> {isOther ? formatShortDate(value) : 'Pick date'}
           <input
             className={styles.pickInput}
             type="date"
