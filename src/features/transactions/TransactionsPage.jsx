@@ -26,6 +26,7 @@ import { deleteTransaction } from '../../api/transactions.js';
 import { useUndoableDelete } from './useUndoableDelete.js';
 import UndoToast from './UndoToast.jsx';
 import { cx } from '../../shared/cx.js';
+import Icon from '../../shared/Icon.jsx';
 import { applyFilters, uniqueValues, totalByCategory } from './filtering.js';
 import ImportTransactions from '../import/ImportTransactions.jsx';
 import RecurringSuggestions from '../recurring/RecurringSuggestions.jsx';
@@ -139,9 +140,9 @@ const TransactionsPage = () => {
     setPaymentMethod('All');
   };
 
-  const handleSort = (key) => {
-    if (sortBy === key) setSortDirection(d => d === 'desc' ? 'asc' : 'desc');
-    else { setSortBy(key); setSortDirection('desc'); }
+  const handleSortChange = (key, direction) => {
+    setSortBy(key);
+    setSortDirection(direction);
   };
 
   const clearFilters = () => { setCategory('All'); setPaymentMethod('All'); setSearch(''); };
@@ -273,12 +274,11 @@ const TransactionsPage = () => {
             monthName={MONTH_NAMES[month - 1]}
             sortBy={sortBy}
             sortDirection={sortDirection}
-            onSort={handleSort}
+            onSortChange={handleSortChange}
             onClearFilters={clearFilters}
             onDelete={undoableDelete.remove}
             onEdit={setEditingTransaction}
             isRecurring={recurring.isRecurring}
-            onToggleRecurring={recurring.toggle}
           />
         </div>
       </div>
@@ -311,7 +311,10 @@ const TransactionsPage = () => {
       {editingTransaction && (
         <TransactionForm
           transaction={editingTransaction}
+          isRecurring={recurring.isRecurring(editingTransaction.id)}
           onSubmit={values => saveChanges(editingTransaction, values)}
+          onRecurringChange={recurring.toggle}
+          onDelete={() => undoableDelete.remove(editingTransaction)}
           onClose={() => setEditingTransaction(null)}
         />
       )}
@@ -338,7 +341,7 @@ const TransactionsPage = () => {
         // Sits above the undo toast when both are showing
         <div className={cx(styles.toast, undoableDelete.pending && styles.toastRaised)} role="alert">
           <span className={styles.toastMessage}>
-            <span aria-hidden="true">⚠️</span> Couldn't save "{saveFailure.values.expense}"
+            <Icon name="alert" size={16} /> Couldn't save "{saveFailure.values.expense}"
           </span>
           <button className={styles.undoBtn} onClick={retrySave}>Try again</button>
         </div>
@@ -346,7 +349,7 @@ const TransactionsPage = () => {
 
       {deleteError && !undoableDelete.pending && !saveFailure && (
         <div className={styles.toast} role="alert">
-          <span aria-hidden="true">⚠️</span> Couldn't delete. It's back in the list.
+          <Icon name="alert" size={16} /> Couldn't delete. It's back in the list.
         </div>
       )}
     </>

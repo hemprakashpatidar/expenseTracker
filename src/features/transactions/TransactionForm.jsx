@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { getCategoryIcon, getCategoryLabel } from '../../shared/categoryStyle.js';
+import { getCategoryLabel } from '../../shared/categoryStyle.js';
 import { formatAmount } from '../../shared/formatters.js';
 import { matchCategory } from '../../shared/guessCategory.js';
 import { getLastPaymentMethod, saveLastPaymentMethod } from './addDefaults.js';
 import { CATEGORIES, PAYMENT_METHODS } from '../../shared/constants.js';
 import { todayISO } from '../../shared/dates.js';
 import { cx } from '../../shared/cx.js';
+import Icon from '../../shared/Icon.jsx';
+import CategoryIcon from '../../shared/CategoryIcon.jsx';
 import ChoiceGroup from '../../shared/form/ChoiceGroup.jsx';
 import DateChoice from '../../shared/form/DateChoice.jsx';
 import { CUSTOM } from '../../shared/form/customChoice.js';
@@ -42,23 +44,35 @@ const initialValues = (transaction) => {
 const resolve = (selected, custom) => selected === CUSTOM ? (custom.trim() || 'Other') : selected;
 
 const TEXT = {
-  add: { title: <><span aria-hidden="true">💸</span> New expense</>, submit: <>Save expense</> },
-  edit: { title: <span className={styles.titlePill}><span aria-hidden="true">✏️</span> Edit expense</span>, submit: <><span aria-hidden="true">💾</span> Save changes</> },
+  add: { title: 'New expense' },
+  edit: { title: <span className={styles.titlePill}><Icon name="pencil" size={14} /> Edit expense</span> },
 };
+
+// Inline message under the field it's about
+const FieldError = ({ error, field }) => error.field === field && (
+  <div className={styles.fieldError} role="alert"><Icon name="alert" size={14} /> {error.message}</div>
+);
 
 // Add and edit share one form; `transaction` switches it to edit mode.
 // onSubmit receives { expense, amount, date, category, paymentMethod }; the form closes straight
 // away and the page saves in the background.
 // `draft` and `initialError` reopen the form after a failed save, with what was typed and why it failed.
 // `recent` (add mode) are past expenses offered as one-tap shortcuts.
-const TransactionForm = ({ transaction, draft, initialError = '', recent = [], onSubmit, onClose }) => {
+// Edit mode also offers "Repeat every month" (`isRecurring`, applied on save through
+// onRecurringChange(updatedTransaction)) and Delete (`onDelete`).
+const TransactionForm = ({
+  transaction, draft, initialError = '', recent = [], isRecurring = false,
+  onSubmit, onRecurringChange, onDelete, onClose,
+}) => {
   useLockPageScroll();
   const mode = transaction ? 'edit' : 'add';
   const text = TEXT[mode];
   // Edit mode highlights fields that differ from the saved expense, so that stays the baseline
   const [initial] = useState(() => initialValues(transaction));
   const [form, setForm] = useState(() => draft ? initialValues(draft) : initial);
-  const [error, setError] = useState(initialError);
+  // { field, message }; a message with no field (a failed save) shows at the top
+  const [error, setError] = useState({ field: null, message: initialError });
+  const [repeat, setRepeat] = useState(isRecurring);
   // While adding, the category follows the description until you pick one yourself
   const [categoryPicked, setCategoryPicked] = useState(mode === 'edit' || Boolean(draft));
 
@@ -82,7 +96,7 @@ const TransactionForm = ({ transaction, draft, initialError = '', recent = [], o
       paymentMethod: payment.selected, customPayment: payment.custom,
     }));
     setCategoryPicked(true);
-    setError('');
+    setError({ field: null, message: '' });
   };
   const changed = (field) => mode === 'edit' && form[field] !== initial[field];
 
@@ -92,33 +106,37 @@ const TransactionForm = ({ transaction, draft, initialError = '', recent = [], o
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
+    setError({ field: null, message: '' });
 
     const amount = parseFloat(form.amount);
     if (!form.amount.trim() || isNaN(amount) || amount <= 0) {
-      setError('Enter an amount greater than 0.');
+      setError({ field: 'amount', message: 'Enter an amount greater than 0.' });
       return;
     }
     if (!form.expense.trim()) {
-      setError('Add a short description.');
+      setError({ field: 'expense', message: 'Add a short description.' });
       return;
     }
     if (!form.category) {
-      setError('Pick a category.');
+      setError({ field: 'category', message: 'Pick a category.' });
       return;
     }
 
     const paymentMethod = resolve(form.paymentMethod, form.customPayment);
-    onSubmit({
+    const values = {
       expense: form.expense.trim(),
       amount,
       date: form.date,
       category: resolve(form.category, form.customCategory),
       paymentMethod,
-    });
+    };
+    onSubmit(values);
     if (mode === 'add') saveLastPaymentMethod(paymentMethod);
+    if (mode === 'edit' && repeat !== isRecurring) onRecurringChange?.({ ...transaction, ...values });
     onClose();
   };
+
+  const validAmount = parseFloat(form.amount) > 0;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -126,32 +144,13 @@ const TransactionForm = ({ transaction, draft, initialError = '', recent = [], o
         <div className={styles.handle} />
 
         <div className={styles.header}>
-          <div className={styles.headerTitle}>{text.title}</div>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Close">✕</button>
+          <h2 className={styles.headerTitle}>{text.title}</h2>
+          <button type="button" className={styles.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
         </div>
 
         <form className={styles.body} onSubmit={handleSubmit} noValidate>
-          {error && <div className={styles.error} role="alert"><span aria-hidden="true">⚠️</span> {error}</div>}
-
-          {mode === 'add' && recent.length > 0 && (
-            <div className={styles.recent}>
-              <span className={styles.label} id="tf-recent">Recent</span>
-              <div className={styles.recentRow} role="group" aria-labelledby="tf-recent">
-                {recent.map(t => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={styles.recentChip}
-                    onClick={() => applyRecent(t)}
-                    aria-label={`Fill in ${t.expense}, ₹${formatAmount(t.amount)}, ${t.category}, ${t.paymentMethod}`}
-                  >
-                    <span aria-hidden="true">{getCategoryIcon(t.category)}</span>
-                    <span className={styles.recentName}>{t.expense}</span>
-                    <span className={styles.recentAmount}>₹{formatAmount(t.amount)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+          {error.message && !error.field && (
+            <div className={styles.error} role="alert"><Icon name="alert" size={16} /> {error.message}</div>
           )}
 
           {/* Amount comes first and largest: it's what you know when you open the form */}
@@ -168,9 +167,30 @@ const TransactionForm = ({ transaction, draft, initialError = '', recent = [], o
                 value={form.amount}
                 onChange={handleAmountChange}
                 placeholder="0"
+                aria-invalid={error.field === 'amount' || undefined}
                 autoFocus
               />
             </div>
+            <FieldError error={error} field="amount" />
+
+            {mode === 'add' && recent.length > 0 && (
+              <div className={styles.recentRow} role="group" aria-label="Recent expenses">
+                <Icon name="history" size={16} className={styles.recentIcon} />
+                {recent.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={styles.recentChip}
+                    onClick={() => applyRecent(t)}
+                    aria-label={`Fill in ${t.expense}, ₹${formatAmount(t.amount)}, ${t.category}, ${t.paymentMethod}`}
+                  >
+                    <CategoryIcon category={t.category} size={14} />
+                    <span className={styles.recentName}>{t.expense}</span>
+                    <span className={styles.recentAmount}>₹{formatAmount(t.amount)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className={styles.field}>
@@ -182,32 +202,37 @@ const TransactionForm = ({ transaction, draft, initialError = '', recent = [], o
               value={form.expense}
               onChange={e => handleDescriptionChange(e.target.value)}
               placeholder="Swiggy dinner"
+              aria-invalid={error.field === 'expense' || undefined}
             />
+            <FieldError error={error} field="expense" />
           </div>
 
-          <ChoiceGroup
-            label="Category"
-            customLabel="custom category"
-            options={CATEGORIES}
-            renderOption={cat => <><span aria-hidden="true">{getCategoryIcon(cat)}</span> {getCategoryLabel(cat)}</>}
-            optionTitle={cat => cat}
-            customOption={<><span aria-hidden="true">✏️</span> Custom</>}
-            value={form.category}
-            customValue={form.customCategory}
-            customPlaceholder="Gym membership"
-            onChange={value => {
-              setCategoryPicked(true);
-              setForm(prev => ({ ...prev, category: value, customCategory: value === CUSTOM ? prev.customCategory : '' }));
-            }}
-            onCustomChange={value => set('customCategory', value)}
-          />
+          <div className={styles.field}>
+            <ChoiceGroup
+              label="Category"
+              customLabel="custom category"
+              options={CATEGORIES}
+              renderOption={cat => <><CategoryIcon category={cat} /> {getCategoryLabel(cat)}</>}
+              optionTitle={cat => cat}
+              customOption={<><Icon name="pencil" size={14} /> Custom</>}
+              value={form.category}
+              customValue={form.customCategory}
+              customPlaceholder="Gym membership"
+              onChange={value => {
+                setCategoryPicked(true);
+                setForm(prev => ({ ...prev, category: value, customCategory: value === CUSTOM ? prev.customCategory : '' }));
+              }}
+              onCustomChange={value => set('customCategory', value)}
+            />
+            <FieldError error={error} field="category" />
+          </div>
 
           <ChoiceGroup
             label="Paid with"
             customLabel="custom payment method"
             options={PAYMENT_METHODS}
             renderOption={pm => pm}
-            customOption={<><span aria-hidden="true">✏️</span> Custom</>}
+            customOption={<><Icon name="pencil" size={14} /> Custom</>}
             value={form.paymentMethod}
             customValue={form.customPayment}
             customPlaceholder="Amazon Pay"
@@ -217,12 +242,31 @@ const TransactionForm = ({ transaction, draft, initialError = '', recent = [], o
 
           <DateChoice value={form.date} onChange={value => set('date', value)} />
 
+          {mode === 'edit' && onRecurringChange && (
+            <label className={styles.switchRow}>
+              <Icon name="repeat" size={18} />
+              <span className={styles.switchLabel}>Repeat every month</span>
+              <input
+                type="checkbox"
+                role="switch"
+                className={styles.switch}
+                checked={repeat}
+                onChange={e => setRepeat(e.target.checked)}
+              />
+            </label>
+          )}
+
+          {/* Pinned to the bottom of the sheet, so Save is always in reach */}
           <div className={styles.actions}>
-            <button type="button" className={styles.cancel} onClick={onClose}>
-              Cancel
-            </button>
+            {mode === 'edit' && onDelete && (
+              <button type="button" className={styles.deleteAction} onClick={() => { onDelete(); onClose(); }}>
+                <Icon name="trash" size={18} /> Delete
+              </button>
+            )}
             <button type="submit" className={styles.submit}>
-              {text.submit}
+              {mode === 'edit'
+                ? 'Save changes'
+                : validAmount ? <>Save <span className={styles.submitAmount}>₹{formatAmount(parseFloat(form.amount))}</span></> : 'Save expense'}
             </button>
           </div>
         </form>

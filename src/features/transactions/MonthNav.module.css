@@ -5,17 +5,19 @@
   gap: 2px;
   background: var(--hero-glass);
   border-radius: 999px;
-  padding: 2px;
+  height: 44px;
+  padding: 0 2px;
 }
 .arrow {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: none;
   border-radius: 50%;
   background: transparent;
   color: var(--hero-text);
-  font-size: 20px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s;
@@ -29,19 +31,22 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 32px;
-  padding: 0 4px;
+  min-height: 40px;
+  padding: 0 2px;
   border-radius: 999px;
 }
 .current:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
 .label {
   font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--hero-text);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
-.caret { font-size: 10px; color: var(--hero-muted); margin-left: 2px; }
+.caret { color: var(--hero-muted); }
 .select {
   position: absolute;
   inset: 0;

@@ -1,10 +1,21 @@
+/* One row inside a day's card; rows are split by a hairline that starts after the icon */
 .wrapper {
   position: relative;
-  border-radius: 14px;
+  list-style: none;
   overflow: hidden;
 }
+.wrapper + .wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 68px;
+  right: 0;
+  height: 1px;
+  background: var(--border-subtle);
+  z-index: 1;
+}
 
-/* Revealed behind the card when it is swiped left */
+/* Revealed behind the row when it is swiped left */
 .swipeDelete {
   position: absolute;
   right: 0;
@@ -13,178 +24,68 @@
   width: 82px;
   background: var(--danger-solid);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   color: white;
   font-size: 12px;
   font-weight: 700;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  border-radius: 14px;
-  gap: 4px;
 }
 .swipeDelete:active { background: var(--danger-solid-hover); }
 
-.card {
-  background: var(--surface);
-  border-radius: 14px;
-  padding: 11px 14px;
-  box-shadow: var(--shadow-card);
-  cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.15s;
-  border-left: 3px solid transparent;
-}
-.card:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
-.card.expanded { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
-/* Shown before the server has confirmed it */
-.card.pending { opacity: 0.6; cursor: default; }
-.card.pending:hover { box-shadow: var(--shadow-card); }
-
 .row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
-  border-radius: 10px;
-}
-.row:focus-visible { outline-offset: 4px; }
-.icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-}
-.info { flex: 1; min-width: 0; }
-.name {
-  font-size: 13px;
-  font-weight: 600;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 16px;
+  border: none;
+  background: var(--surface);
   color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.row:hover { background: var(--surface-hover); }
+.row:active { background: var(--surface-active); }
+.row:focus-visible { outline-offset: -3px; }
+/* Shown before the server has confirmed it */
+.row.pending { opacity: 0.6; cursor: default; }
+.row.pending:hover,
+.row.pending:active { background: var(--surface); }
+
+.info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.nameText {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.recurring { color: var(--accent-text); flex-shrink: 0; }
 .meta {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
-  margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .amount {
   font-family: 'DM Mono', monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text);
   flex-shrink: 0;
 }
-
-/* Expanded details */
-.details {
-  border-top: 1px dashed var(--border-subtle);
-  margin-top: 10px;
-  padding-top: 8px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.chip {
-  background: var(--surface-muted);
-  border-radius: 9px;
-  padding: 7px 10px;
-}
-.chipLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 2px;
-}
-.chipValue {
-  font-size: 13px;
-  color: var(--text);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.chipValue.categoryText { color: var(--category); }
-/* Category colours are dark shades; lighten them so they stay readable on dark cards */
-:global([data-theme='dark']) .chipValue.categoryText { color: color-mix(in srgb, var(--category) 55%, white); }
-.chipValue.money { font-family: 'DM Mono', monospace; }
-
-.fullWidth { grid-column: 1 / -1; }
-.recurringBtn {
-  width: 100%;
-  background: var(--surface-hover);
-  color: var(--text-muted);
-  border: 1.5px solid transparent;
-  border-radius: 9px;
-  padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  transition: all 0.15s;
-}
-.recurringBtn.active {
-  background: var(--accent-soft);
-  color: var(--accent-text);
-  border-color: var(--accent-soft-border);
-}
-
-.footer {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-}
-.hint {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.actions { display: flex; align-items: center; gap: 5px; }
-
-.editBtn {
-  background: var(--edit-accent);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 5px 11px;
-  font-size: 12px;
-  min-height: 32px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: opacity 0.2s;
-}
-.editBtn:hover { opacity: 0.85; }
-.deleteBtn {
-  background: var(--danger-soft);
-  color: var(--danger-text);
-  border: 1.5px solid var(--danger-border);
-  border-radius: 8px;
-  padding: 5px 11px;
-  font-size: 12px;
-  min-height: 32px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.15s;
-}
-.deleteBtn:hover { background: var(--danger-soft-hover); }

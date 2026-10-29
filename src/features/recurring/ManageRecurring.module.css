@@ -51,11 +51,6 @@
   padding: 10px 12px;
   background: var(--surface-muted); border-radius: 12px;
 }
-.icon {
-  width: 34px; height: 34px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
-}
 .info { flex: 1; min-width: 0; }
 .name {
   font-size: 13px; font-weight: 600; color: var(--text);

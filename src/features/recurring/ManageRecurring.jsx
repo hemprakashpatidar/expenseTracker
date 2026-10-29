@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { getCategoryIcon, getCategoryColor } from '../../shared/categoryStyle.js';
+import CategoryIcon from '../../shared/CategoryIcon.jsx';
 import { formatAmount } from '../../shared/formatters.js';
 import { removeRecurringTemplate } from './storage.js';
 import { useLockPageScroll } from '../../shared/form/useLockPageScroll.js';
+import Icon from '../../shared/Icon.jsx';
 import styles from './ManageRecurring.module.css';
 
 const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
@@ -21,20 +22,18 @@ const ManageRecurring = ({ templates, onClose, onTemplatesChange }) => {
         <div className={styles.handle} />
         <div className={styles.header}>
           <div className={styles.title}><span aria-hidden="true">🔄</span> Recurring templates</div>
-          <button className={styles.close} onClick={onClose} aria-label="Close">✕</button>
+          <button className={styles.close} onClick={onClose} aria-label="Close"><Icon name="x" size={22} /></button>
         </div>
 
         <div className={styles.body}>
           {templates.length === 0 ? (
             <div className={styles.empty}>
               No recurring templates yet.<br />
-              Expand any transaction and tap "Set as recurring".
+              Open any expense and turn on "Repeat every month".
             </div>
           ) : templates.map(t => (
             <div key={t.id} className={styles.item}>
-              <div className={styles.icon} style={{ background: `${getCategoryColor(t.category)}18` }} aria-hidden="true">
-                {getCategoryIcon(t.category)}
-              </div>
+              <CategoryIcon category={t.category} size={18} tile />
               <div className={styles.info}>
                 <div className={styles.name}>{t.expense}</div>
                 <div className={styles.meta}>{t.category} · {t.paymentMethod}</div>

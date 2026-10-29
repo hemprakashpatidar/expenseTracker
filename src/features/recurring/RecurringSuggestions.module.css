@@ -60,16 +60,6 @@
   background: var(--surface-muted);
   border-radius: 10px;
 }
-.icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
 .info { flex: 1; min-width: 0; }
 .name {
   font-size: 13px;

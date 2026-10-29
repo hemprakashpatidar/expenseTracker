@@ -6,7 +6,6 @@
   z-index: 60;
   background: var(--surface);
   border-top: 1px solid var(--border-subtle);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .inner {
@@ -14,6 +13,7 @@
   margin: 0 auto;
   height: var(--tabbar-height);
   display: flex;
+  padding: 0 8px;
 }
 .tab {
   flex: 1;
@@ -21,24 +21,25 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   text-decoration: none;
   font-family: 'DM Sans', sans-serif;
-  color: var(--text-muted);
-  position: relative;
+  color: var(--text-secondary);
   border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
 }
 .tab:hover { color: var(--text); }
-.icon { font-size: 20px; line-height: 1; filter: grayscale(0.6); opacity: 0.75; }
-.label { font-size: 12px; font-weight: 700; }
-.active { color: var(--accent-text); }
-.active .icon { filter: none; opacity: 1; }
-.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  width: 32px;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: var(--accent-solid);
+/* The active tab's icon sits on a soft pill */
+.icon {
+  width: 56px;
+  height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
 }
+.label { font-size: 12px; font-weight: 600; }
+.active { color: var(--accent-text); }
+.active .icon { background: var(--accent-soft); }
+.active .label { font-weight: 700; }

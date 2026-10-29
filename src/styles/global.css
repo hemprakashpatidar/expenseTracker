@@ -125,7 +125,7 @@
   --hero-glass-hover: rgba(255, 255, 255, 0.16);
 }
 
-:root { --tabbar-height: 60px; }
+:root { --tabbar-height: 64px; }
 
 /* Room for the scrollbar is kept even when a sheet hides it, so the page doesn't shift sideways */
 html { scrollbar-gutter: stable; }
@@ -145,6 +145,16 @@ body {
 }
 
 /* Hide visually but keep available to screen readers */
+/* People who ask their device for less motion get instant changes instead of slides and fades */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

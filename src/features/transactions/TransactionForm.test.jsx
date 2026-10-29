@@ -22,7 +22,7 @@ test('add mode: no category, UPI and Today to start; text is saved as typed', as
   fill('Description', '  Tea & snacks ');
   fireEvent.click(screen.getByRole('button', { name: /food/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Card' }));
-  fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
 
   await waitFor(() => expect(onClose).toHaveBeenCalled());
   expect(onSubmit).toHaveBeenCalledWith({
@@ -65,7 +65,7 @@ test('reopened after a failed save: shows why, with what was typed', () => {
   expect(screen.getByLabelText('Enter custom category')).toHaveValue('Other, misc');
 
   fill('Enter custom category', 'Misc');
-  fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
   expect(onSubmit).toHaveBeenCalledWith({ expense: 'Swiggy', amount: 5, date: '2026-10-05', category: 'Misc', paymentMethod: 'UPI' });
   expect(onClose).toHaveBeenCalled();
 });
@@ -75,7 +75,7 @@ test('rejects a zero amount without calling the server', () => {
   render(<TransactionForm onSubmit={onSubmit} onClose={() => {}} />);
   fill('Amount', '0');
   fill('Description', 'x');
-  fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
   expect(screen.getByText(/amount greater than 0/)).toBeInTheDocument();
   expect(onSubmit).not.toHaveBeenCalled();
 });
@@ -99,7 +99,7 @@ test('add mode: starts with the payment method used last time', async () => {
   fill('Description', 'Tea');
   fireEvent.click(screen.getAllByRole('button', { name: 'Other' })[0]); // the category one
   fireEvent.click(screen.getByRole('button', { name: 'Cash' }));
-  fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
   await waitFor(() => expect(onSubmit).toHaveBeenCalled());
   unmount();
 
@@ -113,7 +113,7 @@ test('add mode: a recent expense fills the form in one tap', async () => {
   render(<TransactionForm recent={recent} onSubmit={onSubmit} onClose={() => {}} />);
 
   fireEvent.click(screen.getByRole('button', { name: /fill in netflix/i }));
-  fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
   await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({
     expense: 'Netflix', amount: 649, date: todayISO(), category: 'Entertainment', paymentMethod: 'Card',
   }));
@@ -124,7 +124,7 @@ test('add mode: asks for a category when none is picked or matched', () => {
   render(<TransactionForm onSubmit={onSubmit} onClose={() => {}} />);
   fill('Amount', '300');
   fill('Description', 'Gym');
-  fireEvent.click(screen.getByRole('button', { name: /save expense/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
   expect(screen.getByText('Pick a category.')).toBeInTheDocument();
   expect(onSubmit).not.toHaveBeenCalled();
 });
@@ -135,4 +135,48 @@ test('add mode: the auto-picked category clears when the text stops matching', (
   expect(pressed(/food/i)).toBeInTheDocument();
   fill('Description', 'Gym');
   expect(screen.queryByRole('button', { name: /food/i, pressed: true })).toBeNull();
+});
+
+test('add mode: the save button shows the amount once one is typed', () => {
+  render(<TransactionForm onSubmit={vi.fn()} onClose={() => {}} />);
+  expect(screen.getByRole('button', { name: 'Save expense' })).toBeInTheDocument();
+  fill('Amount', '486');
+  expect(screen.getByRole('button', { name: 'Save ₹486' })).toBeInTheDocument();
+});
+
+test('shows a validation message under the field it is about', () => {
+  render(<TransactionForm onSubmit={vi.fn()} onClose={() => {}} />);
+  fill('Amount', '50');
+  fireEvent.click(screen.getByRole('button', { name: /^save/i }));
+  expect(screen.getByText('Add a short description.')).toBeInTheDocument();
+  expect(screen.getByLabelText('Description')).toHaveAttribute('aria-invalid', 'true');
+});
+
+const gym = { id: 'x', expense: 'Gym', amount: 1500, date: '2026-10-05', category: 'Other', paymentMethod: 'Card' };
+
+test('edit mode: Delete hands the expense back and closes', () => {
+  const onDelete = vi.fn();
+  const onClose = vi.fn();
+  render(<TransactionForm transaction={gym} onSubmit={vi.fn()} onDelete={onDelete} onClose={onClose} />);
+  fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+  expect(onDelete).toHaveBeenCalled();
+  expect(onClose).toHaveBeenCalled();
+});
+
+test('edit mode: "Repeat every month" is applied on save, with the edited values', () => {
+  const onRecurringChange = vi.fn();
+  render(<TransactionForm transaction={gym} isRecurring={false} onSubmit={vi.fn()} onRecurringChange={onRecurringChange} onClose={() => {}} />);
+  fireEvent.click(screen.getByRole('switch', { name: /repeat every month/i }));
+  fill('Amount', '1800');
+  expect(onRecurringChange).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+  expect(onRecurringChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'x', amount: 1800 }));
+});
+
+test('edit mode: saving without touching the switch leaves recurring alone', () => {
+  const onRecurringChange = vi.fn();
+  render(<TransactionForm transaction={gym} isRecurring onSubmit={vi.fn()} onRecurringChange={onRecurringChange} onClose={() => {}} />);
+  expect(screen.getByRole('switch', { name: /repeat every month/i })).toBeChecked();
+  fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+  expect(onRecurringChange).not.toHaveBeenCalled();
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cx } from './cx.js';
 import { useTheme } from './useTheme.js';
+import Icon from './Icon.jsx';
 import styles from './AppHeader.module.css';
 
 const THEME_OPTIONS = [
@@ -41,7 +42,7 @@ const AppHeader = ({ title = 'Expenses', userName, searchOpen, onToggleSearch, o
             aria-label={searchOpen ? 'Close search' : 'Search expenses'}
             aria-pressed={searchOpen}
           >
-            <span aria-hidden="true">🔍</span>
+            <Icon name={searchOpen ? 'x' : 'search'} />
           </button>
         )}
 
@@ -77,7 +78,7 @@ const AppHeader = ({ title = 'Expenses', userName, searchOpen, onToggleSearch, o
               </div>
               {onImport && (
                 <button className={styles.menuItem} role="menuitem" onClick={choose(onImport)}>
-                  <span aria-hidden="true">📥</span> Import statement
+                  <Icon name="upload" size={18} /> Import statement
                 </button>
               )}
               <button className={cx(styles.menuItem, styles.danger)} role="menuitem" onClick={choose(onLogout)}>
